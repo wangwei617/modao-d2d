@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>墨刀 D2D — 端到端产品原型</title>
+  <meta name="description" content="墨刀 AI 端到端产品设计与代码生成平台演示入口" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b0e16;
+      --surface: #141824;
+      --surface2: #1c2133;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8ecf4;
+      --text-muted: #7a869a;
+      --accent-blue: #4f8ef7;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-orange: #f59e0b;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(79,142,247,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 30% at 50% 50%, rgba(16,185,129,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 900px;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 52px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(79,142,247,0.12);
+      border: 1px solid rgba(79,142,247,0.25);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-blue);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .logo-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 8px var(--accent-blue);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    .title {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #e8ecf4 0%, #a0aec0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 400;
+      line-height: 1.6;
+      max-width: 480px;
+    }
+
+    /* Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow: hidden;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      min-height: 240px;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card-demo::before {
+      background: radial-gradient(ellipse 100% 100% at 0% 0%, rgba(79,142,247,0.15) 0%, transparent 60%);
+    }
+
+    .card-prd::before {
+      background: radial-gradient(ellipse 100% 100% at 0% 0%, rgba(139,92,246,0.15) 0%, transparent 60%);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-demo:hover { border-color: rgba(79,142,247,0.4); }
+    .card-prd:hover { border-color: rgba(139,92,246,0.4); }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+
+    .card-demo .card-icon {
+      background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(79,142,247,0.08));
+      border: 1px solid rgba(79,142,247,0.3);
+    }
+
+    .card-prd .card-icon {
+      background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.08));
+      border: 1px solid rgba(139,92,246,0.3);
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .card-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .card-demo .card-tag { color: var(--accent-blue); }
+    .card-prd .card-tag { color: var(--accent-purple); }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .card-arrow {
+      position: absolute;
+      bottom: 28px;
+      right: 28px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background 0.2s ease;
+      z-index: 1;
+    }
+
+    .card-demo .card-arrow { background: rgba(79,142,247,0.15); color: var(--accent-blue); }
+    .card-prd .card-arrow { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+
+    .card:hover .card-arrow { transform: translate(2px, -2px); }
+    .card-demo:hover .card-arrow { background: rgba(79,142,247,0.25); }
+    .card-prd:hover .card-arrow { background: rgba(139,92,246,0.25); }
+
+    /* Tags row */
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .tag-chip {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* Footer */
+    .footer {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 600px) {
+      .cards { grid-template-columns: 1fr; }
+      .card { min-height: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo-badge">
+        <span class="logo-dot"></span>
+        墨刀 AI · Design to Code
+      </div>
+      <h1 class="title">端到端产品演示</h1>
+      <p class="subtitle">从需求到界面，AI 驱动的端到端设计与代码生成平台原型演示</p>
+    </header>
+
+    <div class="cards">
+      <!-- Card 1: Demo App -->
+      <a href="/app/" class="card card-demo" target="_blank" rel="noopener">
+        <div class="card-icon">🎨</div>
+        <div class="card-body">
+          <span class="card-tag">Interactive Demo</span>
+          <h2 class="card-title">端到端<br>Demo CN</h2>
+          <p class="card-desc">AI 驱动的界面生成与代码导出，支持预览、编辑、代码查看及多页面管理。</p>
+          <div class="tags">
+            <span class="tag-chip">React</span>
+            <span class="tag-chip">AI 生成</span>
+            <span class="tag-chip">实时预览</span>
+          </div>
+        </div>
+        <div class="card-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+          </svg>
+        </div>
+      </a>
+
+      <!-- Card 2: PRD Doc -->
+      <a href="https://github.com/wangwei617/modao-d2d/blob/main/prd%20%26%20design/%E7%AB%AF%E5%88%B0%E7%AB%AF%20PRD.md" class="card card-prd" target="_blank" rel="noopener">
+        <div class="card-icon">📄</div>
+        <div class="card-body">
+          <span class="card-tag">PRD Document</span>
+          <h2 class="card-title">交互<br>说明文档</h2>
+          <p class="card-desc">完整的端到端产品需求文档，包含功能模块说明、交互规范与设计截图。</p>
+          <div class="tags">
+            <span class="tag-chip">PRD</span>
+            <span class="tag-chip">交互规范</span>
+            <span class="tag-chip">设计说明</span>
+          </div>
+        </div>
+        <div class="card-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+          </svg>
+        </div>
+      </a>
+    </div>
+
+    <footer class="footer">墨刀 AI · 端到端原型演示 · 2025</footer>
+  </div>
+</body>
+</html>

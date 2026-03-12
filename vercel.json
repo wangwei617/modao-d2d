@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/app/:path*",
+      "destination": "/modao-d2d-app/dist/:path*"
+    },
+    {
+      "source": "/app",
+      "destination": "/modao-d2d-app/dist/index.html"
+    }
+  ]
+}
