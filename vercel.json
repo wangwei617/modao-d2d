@@ -1,6 +1,6 @@
 {
-  "buildCommand": "",
-  "installCommand": "",
+  "buildCommand": "cd modao-d2d-app && npm install && npm run build",
+  "installCommand": "npm install",
   "outputDirectory": ".",
   "framework": null,
   "rewrites": [
