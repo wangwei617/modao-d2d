@@ -292,7 +292,7 @@
 
     <div class="cards">
       <!-- Card 1: Demo App -->
-      <a href="/app/" class="card card-demo" target="_blank" rel="noopener">
+      <a href="/app/" class="card card-demo" target="_blank" rel="noopener" id="demo-card-link">
         <div class="card-icon">🎨</div>
         <div class="card-body">
           <span class="card-tag">Interactive Demo</span>
@@ -334,5 +334,21 @@
 
     <footer class="footer">墨刀 AI · 端到端原型演示 · 2025</footer>
   </div>
+
+  <script>
+    // 检测是否在本地开发环境 (localhost 或 127.0.0.1 且端口非 80/443/Vercel)
+    // 如果是本地，我们将 demo 链接自动重定向到 Vite 开发服务器的端口 (默认 5174)
+    document.addEventListener('DOMContentLoaded', () => {
+      const hostname = window.location.hostname;
+      const port = window.location.port;
+      
+      if ((hostname === '127.0.0.1' || hostname === 'localhost') && port !== '' && port !== '5174' && port !== '3000') {
+        const demoLink = document.getElementById('demo-card-link');
+        if (demoLink) {
+          demoLink.href = 'http://' + hostname + ':5174/app/';
+        }
+      }
+    });
+  </script>
 </body>
 </html>
