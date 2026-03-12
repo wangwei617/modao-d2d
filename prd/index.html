@@ -326,8 +326,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
-    const RAW_URL = 'https://raw.githubusercontent.com/wangwei617/modao-d2d/main/prd%20%26%20design/%E7%AB%AF%E5%88%B0%E7%AB%AF%20PRD.md';
-    const IMG_BASE = 'https://raw.githubusercontent.com/wangwei617/modao-d2d/main/prd%20%26%20design/';
+    const RAW_URL = '/prd/content.md';
+    const IMG_BASE = '/prd%20%26%20design/';
 
     marked.setOptions({
       highlight: function(code, lang) {
@@ -346,7 +346,7 @@
         if (!res.ok) throw new Error('Failed to load');
         let text = await res.text();
 
-        // Fix relative image paths → absolute GitHub raw URLs
+        // Fix relative image paths → absolute Vercel-served paths
         text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, (match, alt, src) => {
           return `![${alt}](${IMG_BASE}${encodeURIComponent(src)})`;
         });

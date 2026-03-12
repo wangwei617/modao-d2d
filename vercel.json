@@ -5,12 +5,24 @@
   "framework": null,
   "rewrites": [
     {
+      "source": "/app",
+      "destination": "/modao-d2d-app/dist/index.html"
+    },
+    {
+      "source": "/app/",
+      "destination": "/modao-d2d-app/dist/index.html"
+    },
+    {
       "source": "/app/:path*",
       "destination": "/modao-d2d-app/dist/:path*"
     },
     {
-      "source": "/app",
-      "destination": "/modao-d2d-app/dist/index.html"
+      "source": "/prd",
+      "destination": "/prd/index.html"
+    },
+    {
+      "source": "/prd/",
+      "destination": "/prd/index.html"
     }
   ]
 }
