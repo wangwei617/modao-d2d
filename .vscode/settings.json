@@ -1,0 +1,13 @@
+{
+    "liveServer.settings.port": 5501,
+    "git.ignoreLimitWarning": true,
+    "markdownlint.config": {
+        "default": false
+    },
+    "editor.pasteAs.enabled": true,
+    "markdown.editor.filePaste.enabled": true,
+    "markdown.editor.drop.enabled": true,
+    "markdown.copyFiles.destination": {
+        "**/*": "${documentWorkspaceFolder}/assets/images/${fileName}"
+    }
+}

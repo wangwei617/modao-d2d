@@ -1,28 +1,30 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smartphone, Tablet, Monitor, ChevronLeft, ChevronRight, Share, Share2, Maximize2, Edit3, FileText, CheckCircle2, Paperclip, ArrowUp, X, Globe, Lock, Settings, BarChart3, Image, RefreshCw, MonitorSmartphone } from 'lucide-react';
+import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smartphone, Tablet, Monitor, Share, Share2, Maximize2, Edit3, FileText, CheckCircle2, Paperclip, ArrowUp, X, Globe, Lock, Settings, BarChart3, Image, RefreshCw, MonitorSmartphone, Code2, Palette } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSidebarContext } from '@/context/SidebarContext';
-import { analyzeAndAskQuestions, streamGenerateApp } from '@/lib/geminiService';
+import { streamGenerateApp } from '@/lib/geminiService';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 
-export type GenStage = 'idle' | 'thinking' | 'questioning' | 'planning' | 'search' | 'summarizing' | 'generating' | 'done';
-    
+export type GenStage = 'idle' | 'thinking' | 'executing' | 'generating' | 'done';
+export type FileCardType = 'document' | 'single' | 'multi' | 'app';
+
+export interface ExecutingItem {
+    label: string;
+    done: boolean;
+}
+
 export interface GenerationSession {
     id: string;
     prompt: string;
     stage: GenStage;
     thinkingText: string;
-    questions: string[];
-    userAnswers: Record<number, string>;
-    answeredAll: boolean;
-    currentQuestionIndex: number;
-    planningPoints: string[];
+    executingItems: ExecutingItem[];
     generatedHtml: string;
     streamingCode: string;
-    isUserPromptHidden?: boolean;
+    selectedFileType: FileCardType | null;
     timestamp: number;
 }
 
@@ -30,7 +32,7 @@ export function ChatPage() {
     const { userPrompt, setUserPrompt, sidebarCollapsed, setSidebarCollapsed, setViewMode, setActiveNav } = useSidebarContext();
     const [activeTab, setActiveTab] = useState<'preview' | 'edit' | 'code' | 'config' | 'analytics'>('preview');
     const [isDirOpen, setIsDirOpen] = useState(true);
-    const [activeTerminalFile] = useState('墨刀AI界面设计评审.md');
+    const [activeTerminalFile, setActiveTerminalFile] = useState('墨刀AI界面设计评审.md');
     const [inputMessage, setInputMessage] = useState('');
     const [publishSuccess, setPublishSuccess] = useState(false);
     const [activeFile, setActiveFile] = useState('cart.html');
@@ -74,6 +76,9 @@ export function ChatPage() {
     const [isPublished, setIsPublished] = useState(false);
     const [projectName, setProjectName] = useState('电商购物App原型');
     const [customUrl, setCustomUrl] = useState('cart-app-58751561');
+    const [publishedProjectName, setPublishedProjectName] = useState('');
+    const [publishVersion, setPublishVersion] = useState(0);
+    const [publishedAt, setPublishedAt] = useState<Date | null>(null);
 
     // Screenshot mode state
     const [showScreenshotMode, setShowScreenshotMode] = useState(false);
@@ -81,12 +86,26 @@ export function ChatPage() {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [currentPos, setCurrentPos] = useState({ x: 0, y: 0 });
-    const [comments, setComments] = useState<{ id: number, rect: { x: number, y: number, w: number, h: number }, text: string, isEditing: boolean }[]>([]);
+    const [comments, setComments] = useState<{
+        id: number;
+        rect: { x: number; y: number; w: number; h: number };
+        text: string;
+        isEditing: boolean;
+        confirmed: boolean;
+        shaking: boolean;
+    }[]>([]);
+    const [draggingComment, setDraggingComment] = useState<{
+        id: number; startMX: number; startMY: number; origX: number; origY: number;
+    } | null>(null);
+    const [resizingComment, setResizingComment] = useState<{
+        id: number; startMX: number; startMY: number; origW: number; origH: number;
+    } | null>(null);
+    const [hoveredBadge, setHoveredBadge] = useState<number | null>(null);
 
     const EXISTING_URLS = ['cart-app-123456', 'design-review-11718025', 'table-blue-58751561', 'pig-rock-11718025'];
 
     // Chat Panel Resizing Logic
-    const [chatWidth, setChatWidth] = useState(320);
+    const [chatWidth, setChatWidth] = useState(400);
     const [isDraggingChat, setIsDraggingChat] = useState(false);
     const dragStartRef = useRef({ x: 0, width: 0 });
 
@@ -101,8 +120,8 @@ export function ChatPage() {
             if (!isDraggingChat) return;
             const delta = e.clientX - dragStartRef.current.x;
             let newWidth = dragStartRef.current.width + delta;
-            // minimum 200, maximum 900
-            if (newWidth < 200) newWidth = 200;
+            // minimum 400, maximum 900
+            if (newWidth < 400) newWidth = 400;
             if (newWidth > 900) newWidth = 900;
             setChatWidth(newWidth);
         };
@@ -118,24 +137,40 @@ export function ChatPage() {
     }, [isDraggingChat]);
 
     // ===== AI Generation Flow =====
-    const runGenerationPipeline = async (sessionId: string, prompt: string, extraContext: string) => {
-        updateSession(sessionId, { stage: 'planning' });
-        await new Promise((r) => setTimeout(r, 1200));
+    const runGenerationPipeline = async (sessionId: string, prompt: string) => {
+        // 执行阶段：逐条显示胶囊
+        updateSession(sessionId, { stage: 'executing', executingItems: [] });
+        setActiveTab('preview');
 
-        updateSession(sessionId, { stage: 'search', thinkingText: '正在搜索相关的竞品设计及实现模式...' });
-        await new Promise((r) => setTimeout(r, 1500));
+        // 根据 prompt 生成模拟的执行步骤
+        const executingSteps = [
+            '分析需求结构...',
+            '搭建页面框架',
+            '已完成创建 index.html',
+            '已完成创建 profile.html',
+            '已完成创建 detail.html',
+            '已完成创建 home.html',
+            '正在整合样式资源...',
+        ];
 
-        updateSession(sessionId, { stage: 'summarizing', thinkingText: '汇总需求并准备代码结构...' });
-        await new Promise((r) => setTimeout(r, 1500));
+        for (let i = 0; i < executingSteps.length; i++) {
+            await new Promise((r) => setTimeout(r, 480));
+            setSessions(prev => prev.map(s => s.id === sessionId ? {
+                ...s,
+                executingItems: [
+                    ...s.executingItems,
+                    { label: executingSteps[i], done: true }
+                ]
+            } : s));
+        }
 
+        // 进入代码流式生成，保持预览 tab（不强制切换到代码 tab）
         updateSession(sessionId, { stage: 'generating' });
-        let html = '';
-        
-        // 当切换到 generating 时，右边自动切换为 code/preview tab 等(留给界面层副作用处理，此处先改状态)
-        setActiveTab('code');
+        setActiveTab('preview');
 
+        let html = '';
         await streamGenerateApp(
-            prompt, extraContext,
+            prompt, '',
             (chunk: string) => {
                 html += chunk;
                 updateSession(sessionId, { streamingCode: html });
@@ -143,10 +178,12 @@ export function ChatPage() {
             () => {
                 updateSession(sessionId, {
                     generatedHtml: html,
-                    stage: 'done'
+                    stage: 'done',
+                    // 默认选中「应用」卡片，便于用户直接在右侧查看最新生成的 App
+                    selectedFileType: 'app',
                 });
-                setActiveMessage(sessionId); // set right view to show current generated HTML
-                setActiveTab('preview'); 
+                setActiveMessage(sessionId);
+                setActiveTab('preview');
                 generatingRef.current = false;
             },
             (err: any) => {
@@ -160,57 +197,35 @@ export function ChatPage() {
     const startGeneration = useCallback(async (prompt: string) => {
         if (generatingRef.current) return;
         generatingRef.current = true;
+        // 进入生成页面时自动收起左侧栏
+        setSidebarCollapsed(true);
         
         const sessionId = Date.now().toString();
         const newSession: GenerationSession = {
             id: sessionId,
             prompt,
             stage: 'thinking',
-            thinkingText: '分析需求中...',
-            questions: [],
-            userAnswers: {},
-            answeredAll: false,
-            currentQuestionIndex: 0,
-            planningPoints: [],
+            thinkingText: '正在理解需求...',
+            executingItems: [],
             generatedHtml: '',
             streamingCode: '',
+            selectedFileType: null,
             timestamp: Date.now()
         };
 
         setSessions(prev => [...prev, newSession]);
-        
-        // initial preview states
         setActiveMessage(sessionId);
-        setActiveTab('preview'); // loading state
+        setActiveTab('preview');
 
-        // Simulate thinking animation
-        const thinkingTexts = [
-            '分析需求中...',
-            '理解用户意图...',
-            '融合用户体验五要素评估方案...',
-        ];
+        // Thinking 动画 (约2秒)
+        const thinkingTexts = ['正在理解需求...', '分析产品架构...', '准备生成方案...'];
         for (const t of thinkingTexts) {
             updateSession(sessionId, { thinkingText: t });
-            await new Promise((r) => setTimeout(r, 600));
+            await new Promise((r) => setTimeout(r, 650));
         }
 
-        // Call Gemini to analyze
-        const analysis = await analyzeAndAskQuestions(prompt);
-        
-        updateSession(sessionId, {
-            planningPoints: analysis.planningPoints,
-            thinkingText: analysis.thinkingText || '正在将需求转化为系统设计...'
-        });
-
-        if (analysis.needsClarification && analysis.questions.length > 0) {
-            updateSession(sessionId, {
-                questions: analysis.questions,
-                stage: 'questioning'
-            });
-        } else {
-            // Skip to planning
-            await runGenerationPipeline(sessionId, prompt, '');
-        }
+        // 直接进入执行阶段，不再 questioning
+        await runGenerationPipeline(sessionId, prompt);
     }, [setUserPrompt]);
 
     // Trigger AI generation when userPrompt is available
@@ -220,15 +235,6 @@ export function ChatPage() {
         }
     }, [userPrompt, startGeneration]);
 
-    // Handle user answering clarification questions
-    const handleAnswerSubmit = useCallback(async (sessionId: string) => {
-        const session = sessions.find(s => s.id === sessionId);
-        if (!session) return;
-        const extraContext = session.questions.map((q, i) => `Q: ${q}\nA: ${session.userAnswers[i] ?? ''}`).join('\n');
-        updateSession(sessionId, { answeredAll: true });
-        await runGenerationPipeline(sessionId, session.prompt, extraContext);
-    }, [sessions]);
-
     const handleSendMessage = () => {
         if (!inputMessage.trim() && capturedImages.length === 0) return;
         const finalPrompt = inputMessage.trim() || '请根据提供的截图优化';
@@ -237,8 +243,33 @@ export function ChatPage() {
         setCapturedImages([]);
     };
 
+    // 选中文件卡片
+    const handleSelectFileCard = (sessionId: string, fileType: FileCardType) => {
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, selectedFileType: fileType } : s));
+        if (fileType === 'document') {
+            setActiveMessage('document_' + sessionId);
+        } else {
+            // 非文档类型直接用 sessionId，右侧通过 session.selectedFileType 决定渲染
+            setActiveMessage(sessionId);
+            setActiveTab('preview');
+        }
+    };
+
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
         if ((e.target as HTMLElement).closest('.comment-box-interactive')) return;
+        // 检查是否有正在编辑的评论框
+        const editingComment = comments.find(c => c.isEditing && !c.confirmed);
+        if (editingComment) {
+            if (editingComment.text.trim()) {
+                // 有内容：抖动提示
+                setComments(prev => prev.map(c => c.id === editingComment.id ? { ...c, shaking: true } : c));
+                setTimeout(() => setComments(prev => prev.map(c => c.id === editingComment.id ? { ...c, shaking: false } : c)), 500);
+                return;
+            } else {
+                // 无内容：移除
+                setComments(prev => prev.filter(c => c.id !== editingComment.id));
+            }
+        }
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -248,14 +279,32 @@ export function ChatPage() {
     };
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isDrawing) return;
         const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        setCurrentPos({ x, y });
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        if (draggingComment) {
+            const dx = mx - draggingComment.startMX;
+            const dy = my - draggingComment.startMY;
+            setComments(prev => prev.map(c => c.id === draggingComment.id
+                ? { ...c, rect: { ...c.rect, x: draggingComment.origX + dx, y: draggingComment.origY + dy } }
+                : c));
+            return;
+        }
+        if (resizingComment) {
+            const dx = mx - resizingComment.startMX;
+            const dy = my - resizingComment.startMY;
+            setComments(prev => prev.map(c => c.id === resizingComment.id
+                ? { ...c, rect: { ...c.rect, w: Math.max(40, resizingComment.origW + dx), h: Math.max(30, resizingComment.origH + dy) } }
+                : c));
+            return;
+        }
+        if (!isDrawing) return;
+        setCurrentPos({ x: mx, y: my });
     };
 
     const handleMouseUp = () => {
+        if (draggingComment) { setDraggingComment(null); return; }
+        if (resizingComment) { setResizingComment(null); return; }
         if (!isDrawing) return;
         setIsDrawing(false);
         const w = Math.abs(currentPos.x - startPos.x);
@@ -267,7 +316,9 @@ export function ChatPage() {
                 id: Date.now(),
                 rect: { x, y, w, h },
                 text: '',
-                isEditing: true
+                isEditing: true,
+                confirmed: false,
+                shaking: false,
             }]);
         }
     };
@@ -293,153 +344,255 @@ export function ChatPage() {
     }, []);
 
     const shareDropdown = (
-        <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 p-1 z-50 flex flex-col cursor-default font-sans animate-in fade-in slide-in-from-top-2 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-50">
-                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg">
-                    <button onClick={() => setShareTab('project')} className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition", shareTab === 'project' ? "bg-[#eef2ff] text-[#4f46e5]" : "text-slate-500 hover:text-slate-700")}>分享项目</button>
-                    <button onClick={() => setShareTab('file')} className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition", shareTab === 'file' ? "bg-[#eef2ff] text-[#4f46e5]" : "text-slate-500 hover:text-slate-700")}>分享文件</button>
+        <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 z-50 flex flex-col cursor-default font-sans animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header: tabs + close */}
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-0.5 bg-slate-100/80 p-1 rounded-lg">
+                    <button
+                        onClick={() => setShareTab('project')}
+                        className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition-all", shareTab === 'project' ? "bg-white text-[#4f46e5] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                    >分享项目</button>
+                    <button
+                        onClick={() => setShareTab('file')}
+                        className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition-all", shareTab === 'file' ? "bg-white text-[#4f46e5] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                    >分享文件</button>
                 </div>
-                <button className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-50 transition" onClick={() => setShowSharePanel(false)}><X size={16} /></button>
+                <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition" onClick={() => setShowSharePanel(false)}>
+                    <X size={15} />
+                </button>
             </div>
 
-            <div className="p-4 space-y-5">
+            <div className="px-4 py-4 space-y-4">
+                {/* Access permission */}
                 <div>
-                    <div className="text-[12px] font-bold text-slate-700 mb-3 ml-1">链接访问权限</div>
-                    <div className="border border-slate-100 rounded-xl overflow-hidden divide-y divide-slate-50 shadow-sm">
-                        <div className="flex items-center justify-between p-3.5 hover:bg-slate-50 cursor-pointer transition">
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Lock size={15} /></div>
+                    <div className="text-[13px] font-bold text-slate-700 mb-2.5">链接访问权限</div>
+                    <div className="border border-slate-100 rounded-xl overflow-hidden divide-y divide-slate-100">
+                        <div className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer transition select-none">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                                    <Lock size={14} />
+                                </div>
                                 <div>
-                                    <div className="text-[13px] font-bold text-slate-700">仅限自己</div>
-                                    <div className="text-[11px] text-slate-400 font-medium mt-0.5">仅自己可见</div>
+                                    <div className="text-[13px] font-semibold text-slate-700">仅限自己</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">仅自己可见</div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between p-3.5 hover:bg-indigo-50/50 cursor-pointer bg-indigo-50/40 transition">
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-[#4f46e5]"><Globe size={15} /></div>
+                        <div className="flex items-center justify-between px-4 py-3 bg-indigo-50/50 hover:bg-indigo-50 cursor-pointer transition select-none">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-[#4f46e5]">
+                                    <Globe size={14} />
+                                </div>
                                 <div>
-                                    <div className="text-[13px] font-bold text-slate-700">公开</div>
-                                    <div className="text-[11px] text-slate-400 font-medium mt-0.5">获得链接的人可访问</div>
+                                    <div className="text-[13px] font-semibold text-slate-700">公开</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">获得链接的人可访问</div>
                                 </div>
                             </div>
-                            <Check size={16} className="text-[#4f46e5]" />
+                            <Check size={15} className="text-[#4f46e5] shrink-0" strokeWidth={2.5} />
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between py-1 px-1">
-                    <div className="text-[13px] font-bold text-slate-700">回放模式</div>
-                    <div className="w-10 h-6 bg-[#6366f1] rounded-full flex items-center p-0.5 justify-end cursor-pointer"><div className="w-5 h-5 bg-white rounded-full shadow-sm" /></div>
-                </div>
+                {/* Replay mode toggle - only show for project tab */}
+                {shareTab === 'project' && (
+                    <div className="flex items-center justify-between px-1">
+                        <div className="text-[13px] font-semibold text-slate-700">回放模式</div>
+                        <div className="w-10 h-[22px] bg-[#6366f1] rounded-full flex items-center p-0.5 justify-end cursor-pointer">
+                            <div className="w-[18px] h-[18px] bg-white rounded-full shadow-sm" />
+                        </div>
+                    </div>
+                )}
 
-                <div className="space-y-2.5 pt-1">
-                    <button className="w-full h-10 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-[13px] font-bold rounded-lg transition-colors active:scale-95 shadow-sm">复制链接</button>
-                    {shareTab === 'project' && <button className="w-full h-10 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[13px] font-bold rounded-lg transition-colors active:scale-95 shadow-sm">发布项目</button>}
+                {/* Action buttons */}
+                <div className="space-y-2 pt-0.5">
+                    <button className="w-full h-10 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-[13px] font-bold rounded-xl transition-colors active:scale-[0.98] shadow-sm">
+                        复制链接
+                    </button>
                 </div>
             </div>
         </div>
     );
 
+    const hasPublishChanges = isPublished && projectName !== publishedProjectName;
+
+    const formatPublishedAt = (date: Date) => {
+        const diffMs = Date.now() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return '刚刚';
+        if (diffMins < 60) return `${diffMins} 分钟前`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours} 小时前`;
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays} 天前`;
+    };
+
     const publishDropdown = (
-        <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 w-[520px] z-50 cursor-default animate-in fade-in slide-in-from-top-2 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-                <div className="text-[14px] font-bold text-gray-800">发布设置</div>
-                <button onClick={() => setShowPublishModal(false)} className="text-gray-400 hover:text-gray-600 transition"><X size={16} /></button>
+        <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 w-[420px] z-50 cursor-default animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="text-[15px] font-bold text-gray-900">Publish website</div>
+                <button onClick={() => setShowPublishModal(false)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                    <X size={15} />
+                </button>
             </div>
-            <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-                {/* Network title */}
-                <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-gray-500 w-24 shrink-0">网站标题</span>
-                    <input value={siteTitle} onChange={e => setSiteTitle(e.target.value)} placeholder="输入网站标题..." className="flex-1 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+
+            {/* Form fields */}
+            <div className="px-6 py-5 space-y-5">
+                {/* Page name */}
+                <div className="flex items-center gap-5">
+                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">Page name</span>
+                    <input
+                        value={projectName}
+                        onChange={e => setProjectName(e.target.value)}
+                        className="flex-1 bg-gray-50 border border-gray-50 rounded-lg px-3 py-2 text-[13px] font-medium text-gray-800 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition"
+                    />
                 </div>
-                {/* Description */}
-                <div className="flex items-start gap-4">
-                    <span className="text-sm font-semibold text-gray-500 w-24 shrink-0 pt-2">网站描述</span>
-                    <textarea value={siteDescription} onChange={e => setSiteDescription(e.target.value)} placeholder="输入网站描述..." rows={2} className="flex-1 resize-none bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-indigo-100 transition" />
-                </div>
-                {/* Thumbnail */}
-                <div className="flex items-start gap-4">
-                    <span className="text-sm font-semibold text-gray-500 w-24 shrink-0 pt-2">缩略图</span>
-                    <div className="flex-1">
-                        <input ref={thumbnailInputRef} type="file" accept="image/*" className="hidden" onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) setThumbnailUrl(URL.createObjectURL(file));
-                        }} />
-                        {thumbnailUrl ? (
-                            <div className="relative group">
-                                <img src={thumbnailUrl} alt="thumbnail" className="w-full h-28 object-cover rounded-xl border border-gray-100" />
-                                <button onClick={() => { setThumbnailUrl(''); if (thumbnailInputRef.current) thumbnailInputRef.current.value = ''; }} className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                                    <X size={12} className="text-gray-600" />
-                                </button>
-                            </div>
-                        ) : (
-                            <div onClick={() => thumbnailInputRef.current?.click()} className="w-full h-28 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition">
-                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <Image size={16} className="text-gray-400" />
-                                </div>
-                                <div className="text-[12px] text-gray-400 font-medium">点击上传图片</div>
-                                <div className="text-[11px] text-gray-300">默认为网站首页截图</div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {/* Project name */}
-                <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-gray-500 w-24 shrink-0">项目名称</span>
-                    <input value={projectName} onChange={e => setProjectName(e.target.value)} className="flex-1 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-100 transition" />
-                </div>
-                {/* Status */}
-                <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-gray-500 w-24 shrink-0">当前状态</span>
-                    {isPublished ? (
-                        <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-md text-xs font-bold border border-emerald-100"><CheckCircle2 size={13} /> 已发布</div>
-                    ) : (
-                        <div className="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-2.5 py-1 rounded-md text-xs font-bold">未发布</div>
-                    )}
-                </div>
-                {/* URL */}
-                <div className="flex items-start gap-4">
-                    <span className="text-sm font-semibold text-gray-500 w-24 shrink-0 pt-2">访问链接</span>
-                    <div className="flex-1 space-y-2">
-                        <div className={cn("flex items-center border rounded-lg overflow-hidden transition px-3 py-2 bg-gray-50", isEditingUrl ? "border-indigo-300 ring-4 ring-indigo-50 bg-white" : "border-gray-100")}>
-                            {isEditingUrl ? (
-                                <input autoFocus value={editUrlValue} onChange={e => { setEditUrlValue(e.target.value); setUrlError(''); }} onKeyDown={e => { if (e.key === 'Enter') { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } } if (e.key === 'Escape') setIsEditingUrl(false); }} className="flex-1 bg-transparent text-sm font-mono text-gray-800 outline-none w-full" />
-                            ) : (
-                                <span className="flex-1 text-sm font-mono text-gray-700 truncate">{customUrl}</span>
-                            )}
-                            <span className="text-xs text-gray-400 font-mono ml-2">.modao.site</span>
+
+                {/* Status - only when published */}
+                {isPublished && (
+                    <div className="flex items-center gap-5">
+                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">Status</span>
+                        <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[12px] font-semibold border border-emerald-100">
+                            <CheckCircle2 size={13} strokeWidth={2.5} />
+                            Published
                         </div>
-                        {isEditingUrl ? (
-                            <div className="flex gap-2">
-                                <button onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} className="px-3 py-1 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-md hover:bg-indigo-100 transition">确定</button>
-                                <button onClick={() => setIsEditingUrl(false)} className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-xs rounded-md hover:bg-gray-200 transition">取消</button>
-                            </div>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }} className="text-xs font-bold flex items-center gap-1 text-gray-500 hover:text-gray-700 transition">
-                                    {copySuccess ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />} 复制链接
-                                </button>
-                                <button onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }} className="text-xs font-bold flex items-center gap-1 text-gray-500 hover:text-gray-700 transition"><Edit3 size={12} /> 自定义</button>
-                            </div>
-                        )}
-                        {urlError && <div className="text-[11px] text-red-500 font-medium">{urlError}</div>}
+                    </div>
+                )}
+
+                {/* Last published - only when published */}
+                {isPublished && publishedAt && (
+                    <div className="flex items-center gap-5">
+                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">Last published</span>
+                        <span className="text-[13px] font-medium text-gray-700">
+                            {formatPublishedAt(publishedAt)} · V{publishVersion}
+                        </span>
+                    </div>
+                )}
+
+                {/* URL */}
+                <div className="flex items-center gap-5">
+                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">URL</span>
+                    <div className="flex-1 flex items-center gap-2">
+                        <div className={cn("flex-1 flex items-center border rounded-lg px-3 py-2 transition", isEditingUrl ? "border-indigo-300 ring-2 ring-indigo-100 bg-white" : "border-gray-50 bg-gray-50")}>
+                            {isEditingUrl ? (
+                                <input
+                                    autoFocus
+                                    value={editUrlValue}
+                                    onChange={e => { setEditUrlValue(e.target.value); setUrlError(''); }}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('This URL is already taken');
+                                            else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); }
+                                        }
+                                        if (e.key === 'Escape') setIsEditingUrl(false);
+                                    }}
+                                    className="flex-1 bg-transparent text-[13px] font-medium text-gray-800 outline-none w-full"
+                                />
+                            ) : (
+                                <span className="flex-1 text-[13px] font-medium text-gray-800 truncate">{customUrl}</span>
+                            )}
+                            <span className="text-[13px] font-medium text-gray-400 ml-1 shrink-0">.paico.site</span>
+                        </div>
+                        {/* URL action icons */}
+                        <div className="flex items-center gap-0.5">
+                            <button
+                                title="Copy URL"
+                                onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
+                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                            >
+                                {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
+                            </button>
+                            <button
+                                title="Randomize URL"
+                                onClick={() => {
+                                    const rand = Math.random().toString(36).slice(2, 10);
+                                    setCustomUrl(rand);
+                                    setUrlError('');
+                                }}
+                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                                </svg>
+                            </button>
+                            <button
+                                title="Edit URL"
+                                onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }}
+                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                            >
+                                <Edit3 size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
+                {isEditingUrl && (
+                    <div className="flex gap-2 pl-[110px]">
+                        <button onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('This URL is already taken'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} className="px-3 py-1 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-md hover:bg-indigo-100 transition">Save</button>
+                        <button onClick={() => setIsEditingUrl(false)} className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-xs rounded-md hover:bg-gray-200 transition">Cancel</button>
+                    </div>
+                )}
+                {urlError && <div className="text-[12px] text-red-500 font-medium pl-[110px]">{urlError}</div>}
             </div>
-            <div className="px-6 py-4 bg-gray-50/50 flex gap-3 border-t border-gray-50">
+
+            {/* Footer buttons */}
+            <div className="px-6 pb-5 flex gap-3">
                 {isPublished ? (
                     <>
-                        <button onClick={() => { setIsPublished(false); setShowPublishModal(false); }} className="flex-1 h-9 rounded-lg border border-gray-200 text-gray-600 font-bold text-sm hover:bg-white transition bg-transparent">取消发布</button>
-                        <button onClick={() => { setPublishSuccess(true); setTimeout(() => { setPublishSuccess(false); setShowPublishModal(false); }, 1500); }} className="flex-1 h-9 rounded-lg bg-black text-white font-bold text-sm hover:bg-slate-800 transition overflow-hidden relative">
-                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>更新版本</div>
-                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500" : "translate-y-10 opacity-0")}><Check size={14} strokeWidth={3} /> 更新成功</div>
+                        <button
+                            onClick={() => { setIsPublished(false); setPublishVersion(0); setPublishedAt(null); setPublishedProjectName(''); setShowPublishModal(false); }}
+                            className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white"
+                        >
+                            Unpublish
+                        </button>
+                        <button
+                            disabled={!hasPublishChanges}
+                            onClick={() => {
+                                if (!hasPublishChanges) return;
+                                setPublishSuccess(true);
+                                setTimeout(() => {
+                                    setPublishSuccess(false);
+                                    setPublishedProjectName(projectName);
+                                    setPublishVersion(v => v + 1);
+                                    setPublishedAt(new Date());
+                                    setShowPublishModal(false);
+                                }, 1500);
+                            }}
+                            className={cn(
+                                "flex-1 h-[42px] rounded-[10px] font-semibold text-[14px] overflow-hidden relative transition",
+                                hasPublishChanges
+                                    ? "bg-[#1A1A1A] text-white hover:bg-black"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            )}
+                        >
+                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                                Update
+                            </div>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
+                                <Check size={16} strokeWidth={3} /> Updated
+                            </div>
                         </button>
                     </>
                 ) : (
-                    <button onClick={() => { setPublishSuccess(true); setTimeout(() => { setPublishSuccess(false); setIsPublished(true); setShowPublishModal(false); }, 1500); }} className="w-full h-9 rounded-lg bg-black text-white font-bold text-sm hover:bg-slate-800 transition overflow-hidden relative shadow-sm">
-                        <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>发布项目</div>
-                        <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500" : "translate-y-10 opacity-0")}><Check size={14} strokeWidth={3} /> 发布成功</div>
+                    <button
+                        onClick={() => {
+                            setPublishSuccess(true);
+                            setTimeout(() => {
+                                setPublishSuccess(false);
+                                setIsPublished(true);
+                                setPublishedProjectName(projectName);
+                                setPublishVersion(1);
+                                setPublishedAt(new Date());
+                                setShowPublishModal(false);
+                            }, 1500);
+                        }}
+                        className="w-full h-[42px] rounded-[10px] bg-[#1A1A1A] text-white font-semibold text-[14px] hover:bg-black transition overflow-hidden relative"
+                    >
+                        <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                            Publish
+                        </div>
+                        <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
+                            <Check size={16} strokeWidth={3} /> Published
+                        </div>
                     </button>
                 )}
             </div>
@@ -465,6 +618,27 @@ export function ChatPage() {
         }
 
         const isGenerating = currentSession.stage === 'generating';
+        const isExecuting = currentSession.stage === 'executing';
+
+        // 执行中/thinking 状态：右侧显示骨架屏
+        if (isExecuting || currentSession.stage === 'thinking') {
+            return (
+                <div className="flex-1 w-full h-full flex flex-col items-center justify-center bg-slate-50">
+                    <div className="w-full max-w-2xl px-8 flex flex-col items-center opacity-60">
+                        <RefreshCw size={28} className="animate-spin text-indigo-400 mb-6" />
+                        <div className="space-y-3 w-full">
+                            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="h-28 bg-slate-200 rounded-xl animate-pulse col-span-2" />
+                                <div className="h-28 bg-slate-200 rounded-xl animate-pulse" />
+                            </div>
+                            <div className="h-40 bg-slate-200 rounded-xl animate-pulse" />
+                        </div>
+                        <p className="text-[13px] font-medium text-slate-500 mt-6">AI 正在生成中，请稍候...</p>
+                    </div>
+                </div>
+            );
+        }
 
         if (activeTab === 'preview' || activeTab === 'edit') {
             if (isGenerating && !currentSession.generatedHtml) {
@@ -530,21 +704,21 @@ export function ChatPage() {
 
         if (activeTab === 'code') {
             return (
-                <div className="flex-1 w-full h-full bg-[#1e1e1e] text-slate-300 font-mono text-[13px] overflow-hidden p-6 relative">
+                <div className="flex-1 w-full h-full bg-slate-50 text-slate-700 font-mono text-[13px] overflow-hidden p-6 relative">
                     {/* Code Scrollable */}
                     <ScrollArea className="w-full h-full">
                         {isGenerating && (
-                            <div className="flex items-center gap-2 text-indigo-400 mb-4 pb-4 border-b border-white/5 text-[12px]">
+                            <div className="flex items-center gap-2 text-indigo-500 mb-4 pb-4 border-b border-slate-200 text-[12px]">
                                 <RefreshCw size={12} className="animate-spin" />
                                 接收流式代码中...
                             </div>
                         )}
                         <pre className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed break-all">
                             {(currentSession.streamingCode || currentSession.generatedHtml) && (
-                                <code>{currentSession.streamingCode || currentSession.generatedHtml}</code>
+                                <code className="text-slate-800">{currentSession.streamingCode || currentSession.generatedHtml}</code>
                             )}
                             {(!currentSession.streamingCode && !currentSession.generatedHtml) && (
-                                <span className="opacity-50">等待代码生成...</span>
+                                <span className="text-slate-400">等待代码生成...</span>
                             )}
                         </pre>
                     </ScrollArea>
@@ -567,6 +741,26 @@ export function ChatPage() {
         }
 
         return null;
+    };
+
+    // 判断右侧是否显示目录
+    // multi: 预览/编辑/代码 三个 tab 均显示单级页面目录
+    // app: 仅代码 tab 显示多级文件夹树，预览/编辑不显示目录（PRD 规定）
+    const getShowDir = (session: GenerationSession | undefined): boolean => {
+        if (!session || session.stage !== 'done') return false;
+        const ft = session.selectedFileType;
+        if (ft === 'multi') return isDirOpen;
+        if (ft === 'app' && activeTab === 'code') return isDirOpen;
+        return false;
+    };
+
+    // 是否应该有目录（不论展开/收起）
+    const canHaveDir = (session: GenerationSession | undefined): boolean => {
+        if (!session || session.stage !== 'done') return false;
+        const ft = session.selectedFileType;
+        if (ft === 'multi') return true;
+        if (ft === 'app' && activeTab === 'code') return true;
+        return false;
     };
 
     return (
@@ -650,7 +844,7 @@ export function ChatPage() {
                             )}
 
                             {/* Thinking stage */}
-                            {(session.stage === 'thinking') && (
+                            {session.stage === 'thinking' && (
                                 <div className="flex gap-2.5 mt-3">
                                     <div className="w-6 h-6 rounded-full bg-slate-700 shrink-0 mt-0.5 flex items-center justify-center">
                                         <Sparkles size={12} className="text-white" fill="white" />
@@ -662,189 +856,121 @@ export function ChatPage() {
                                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                                             </div>
-                                            <span className="text-slate-500 text-[12px]">{session.thinkingText || '正在思考...'}</span>
+                                            <span className="text-slate-500 text-[12px]">{session.thinkingText}</span>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Questioning stage - Paginated Inquiry Panel */}
-                            {(session.stage === 'questioning' || (session.stage !== 'thinking' && session.questions.length > 0)) && (
+                            {/* Executing stage: 胶囊列表 */}
+                            {(session.stage === 'executing' || session.stage === 'generating' || session.stage === 'done') && session.executingItems.length > 0 && (
                                 <div className="flex gap-2.5 mt-3">
                                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shrink-0 mt-0.5 flex items-center justify-center">
                                         <Sparkles size={12} className="text-white" fill="white" />
                                     </div>
-                                    <div className="flex-1 bg-white rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm overflow-hidden">
-                                        {/* Panel Header */}
-                                        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                                            <span className="text-[13px] font-bold text-slate-800">关于需求我想进一步确认...</span>
-                                        </div>
-                                        {/* Question Content */}
-                                        <div className="p-4">
-                                            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-                                                {/* Question Title + Pagination */}
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-[14px] font-semibold text-slate-800">
-                                                        {session.questions[session.currentQuestionIndex]}
-                                                    </span>
-                                                    <div className="flex items-center gap-2 text-slate-400 text-[12px] shrink-0 ml-3">
-                                                        <button
-                                                            onClick={() => updateSession(session.id, { currentQuestionIndex: Math.max(0, session.currentQuestionIndex - 1)})}
-                                                            disabled={session.currentQuestionIndex === 0}
-                                                            className="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-30 transition"
-                                                        >
-                                                            <ChevronLeft size={12} />
-                                                        </button>
-                                                        <span className="font-bold text-slate-500">{session.currentQuestionIndex + 1} / {session.questions.length}</span>
-                                                        <button
-                                                            onClick={() => updateSession(session.id, { currentQuestionIndex: Math.min(session.questions.length - 1, session.currentQuestionIndex + 1)})}
-                                                            disabled={session.currentQuestionIndex >= session.questions.length - 1}
-                                                            className="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-30 transition"
-                                                        >
-                                                            <ChevronRight size={12} />
-                                                        </button>
-                                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        {session.executingItems.map((item, i) => {
+                                            const isFileStep = item.label.startsWith('已完成创建 ');
+                                            const fileName = isFileStep ? item.label.replace('已完成创建 ', '').trim() : null;
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="flex items-center gap-2.5 bg-slate-50 border border-slate-100 rounded-full px-3.5 py-2 text-[12px] text-slate-600 w-fit cursor-default"
+                                                    onClick={() => {
+                                                        if (!fileName) return;
+                                                        setActiveTerminalFile(fileName);
+                                                        setActiveMessage('terminal');
+                                                    }}
+                                                    style={isFileStep ? { cursor: 'pointer' } : undefined}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                    <span className="font-medium">{item.label}</span>
                                                 </div>
-                                                {/* Answer Options */}
-                                                {session.stage === 'questioning' && !session.answeredAll && (
-                                                    <div className="space-y-2">
-                                                        <label className={cn(
-                                                            "flex flex-col gap-2 p-3 rounded-xl border cursor-pointer transition-all border-slate-100 hover:bg-slate-50 focus-within:border-indigo-300 focus-within:bg-indigo-50/20 shadow-sm"
-                                                        )}>
-                                                            <div className="flex items-start gap-3">
-                                                                <div className="mt-1 flex-1">
-                                                                    <textarea
-                                                                        value={session.userAnswers[session.currentQuestionIndex] ?? ''}
-                                                                        onChange={e => updateSession(session.id, { userAnswers: { ...session.userAnswers, [session.currentQuestionIndex]: e.target.value }})}
-                                                                        placeholder="你可以输入你的偏好、想法或背景信息..."
-                                                                        className="w-full text-[13px] font-medium bg-transparent border-none focus:ring-0 resize-none outline-none text-slate-700 min-h-[60px]"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </label>
-                                                    </div>
-                                                )}
-                                                {session.answeredAll && session.userAnswers[session.currentQuestionIndex] && (
-                                                    <div className="text-[13px] bg-slate-50 p-3 rounded-xl text-slate-700">
-                                                        <span className="font-bold text-slate-500 mr-2">你的回答:</span> 
-                                                        {session.userAnswers[session.currentQuestionIndex]}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {/* Footer Actions */}
-                                        {session.stage === 'questioning' && !session.answeredAll && (
-                                            <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-                                                <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                                                    通过提供回答，可增加产品生成的准确度
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => handleAnswerSubmit(session.id)}
-                                                        className="h-8 px-4 text-[12px] font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition active:scale-95"
-                                                    >
-                                                        稍后确认 / 跳过
-                                                    </button>
-                                                    {session.currentQuestionIndex < session.questions.length - 1 ? (
-                                                        <button
-                                                            onClick={() => {
-                                                                 updateSession(session.id, { currentQuestionIndex: Math.min(session.questions.length - 1, session.currentQuestionIndex + 1)})
-                                                            }}
-                                                            className="h-8 px-5 text-[12px] font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition active:scale-95 shadow-sm"
-                                                        >
-                                                            下一问
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => handleAnswerSubmit(session.id)}
-                                                            className="h-8 px-5 text-[12px] font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition active:scale-95 flex items-center gap-1.5 shadow-sm"
-                                                        >
-                                                            <Sparkles size={12} />
-                                                            完成并生成
-                                                        </button>
-                                                    )}
-                                                </div>
+                                            );
+                                        })}
+                                        {session.stage === 'executing' && (
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 px-2 mt-1">
+                                                <RefreshCw size={11} className="animate-spin" />
+                                                正在执行...
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Planning stage */}
-                            {(session.stage === 'planning' || session.stage === 'search' || session.stage === 'summarizing' || session.stage === 'generating' || session.stage === 'done') && session.planningPoints.length > 0 && (
-                                <div className="flex gap-2.5 mt-3">
-                                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shrink-0 mt-0.5 flex items-center justify-center">
-                                        <Sparkles size={12} className="text-white" fill="white" />
-                                    </div>
-                                    <div className="flex-1 bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-3 border border-slate-100">
-                                        <p className="text-[13px] text-slate-700 leading-relaxed mb-4">{session.thinkingText}</p>
-                                        <p className="text-[12px] font-semibold text-slate-600 mb-2">规划大纲</p>
-                                        <div className="space-y-1.5">
-                                            {session.planningPoints.map((point, i) => (
-                                                <div key={i} className="flex items-start gap-2 text-[12px] text-slate-600">
-                                                    {['done', 'generating'].includes(session.stage) || (session.stage === 'planning' && i === 0)? (
-                                                         <CheckCircle2 size={13} className="text-emerald-500 mt-0.5 shrink-0" />
-                                                    ) : (
-                                                         <div className="w-[13px] h-[13px] mt-0.5 shrink-0 border border-slate-300 rounded-full" />
-                                                    )}
-                                                    {point}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Generating stage */}
-                            {(session.stage === 'generating') && (
-                                <div className="flex gap-2.5">
+                            {/* Generating 阶段状态 */}
+                            {session.stage === 'generating' && (
+                                <div className="flex gap-2.5 mt-2">
                                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shrink-0 mt-0.5 flex items-center justify-center">
                                         <Sparkles size={12} className="text-white" fill="white" />
                                     </div>
                                     <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-3 border border-slate-100">
                                         <div className="flex items-center gap-2 text-[12px] text-slate-500">
                                             <RefreshCw size={12} className="animate-spin text-indigo-500" />
-                                            正在生成应用代码（{Math.round(session.streamingCode.length / 10) * 10}字符已生成）...
+                                            正在生成代码（{Math.round(session.streamingCode.length / 10) * 10} 字符）...
                                         </div>
                                     </div>
                                 </div>
                             )}
 
+                            {/* Done 阶段：AI 回复 + 4类文件卡片 */}
                             {session.stage === 'done' && (
-                                <div className="space-y-3 ml-8">
+                                <div className="space-y-3 mt-2">
+                                    {/* AI 完成消息 */}
                                     <div className="flex gap-2.5">
                                         <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shrink-0 mt-0.5 flex items-center justify-center">
                                             <Sparkles size={12} className="text-white" fill="white" />
                                         </div>
                                         <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-3 border border-slate-100 text-[13px] text-slate-600">
-                                            <p>应用已生成完成！可在右侧区域查看并交互。</p>
+                                            <p>已为您生成以下内容，点击卡片可在右侧查看：</p>
                                         </div>
                                     </div>
-                                    <div
-                                        onClick={() => { setActiveMessage(session.id); setActiveTab('preview'); }}
-                                        className={cn(
-                                            "border-2 rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-all",
-                                            activeMessage === session.id ? "border-indigo-500 bg-indigo-50/10 shadow-sm" : "border-gray-100 hover:border-indigo-200 bg-white"
-                                        )}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
+
+                                    {/* 4类文件卡片 */}
+                                    <div className="ml-8 space-y-2">
+                                        {([
+                                            { type: 'document' as FileCardType, title: '设计评审文档', subtitle: '文档', icon: 'doc' },
+                                            { type: 'single' as FileCardType, title: '单页应用', subtitle: '单页面', icon: 'single' },
+                                            { type: 'multi' as FileCardType, title: session.prompt.slice(0, 12) + '多页原型', subtitle: '多页面', icon: 'multi' },
+                                            { type: 'app' as FileCardType, title: session.prompt.slice(0, 10) + 'App原型', subtitle: '应用', icon: 'app' },
+                                        ] as const).map((card) => (
+                                            <div
+                                                key={card.type}
+                                                onClick={() => handleSelectFileCard(session.id, card.type)}
+                                                className={cn(
+                                                    "flex items-center gap-3 rounded-2xl border-2 p-3 cursor-pointer transition-all duration-200 select-none",
+                                                    session.selectedFileType === card.type
+                                                        ? "border-indigo-500 bg-indigo-50/30 shadow-sm shadow-indigo-100"
+                                                        : "border-slate-100 bg-white hover:border-indigo-200 hover:shadow-sm"
+                                                )}
+                                            >
+                                                {/* 图标区 */}
+                                                <div className={cn(
+                                                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                                                    session.selectedFileType === card.type ? "bg-indigo-100" : "bg-slate-100"
+                                                )}>
+                                                    {card.icon === 'doc' && <FileText size={18} className={session.selectedFileType === card.type ? "text-indigo-600" : "text-slate-500"} />}
+                                                    {card.icon === 'single' && <Globe size={18} className={session.selectedFileType === card.type ? "text-indigo-600" : "text-slate-500"} />}
+                                                    {card.icon === 'multi' && <MonitorSmartphone size={18} className={session.selectedFileType === card.type ? "text-indigo-600" : "text-slate-500"} />}
+                                                    {card.icon === 'app' && <Smartphone size={18} className={session.selectedFileType === card.type ? "text-indigo-600" : "text-slate-500"} />}
                                                 </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-800 text-sm">{projectName} (迭代)</div>
-                                                    <div className="text-[10px] text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">AI 生成</div>
+                                                {/* 文字区 */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-bold text-slate-800 text-[13px] truncate">{card.title}</div>
+                                                    <div className="text-[11px] text-slate-400 mt-0.5">{card.subtitle}</div>
+                                                </div>
+                                                {/* 右侧预览占位色块（模拟图2效果） */}
+                                                <div className={cn(
+                                                    "w-14 h-10 rounded-lg shrink-0 overflow-hidden",
+                                                    card.icon === 'app' ? "bg-slate-900" : "bg-gradient-to-br from-indigo-400 to-purple-500"
+                                                )}>
+                                                    <div className="w-full h-full flex items-center justify-center opacity-60">
+                                                        {card.icon === 'app' && <Smartphone size={16} className="text-white" />}
+                                                        {card.icon !== 'app' && <Monitor size={14} className="text-white" />}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center justify-between pt-2 border-t border-slate-50 mt-1">
-                                            <div className="flex items-center gap-1.5 text-[11px] text-emerald-500 font-bold">
-                                                <CheckCircle2 size={13} /> 生成完成
-                                            </div>
-                                            <span className="text-[10px] text-slate-400 font-medium">{new Date(session.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -878,7 +1004,7 @@ export function ChatPage() {
                                             value={inputMessage}
                                             onChange={(e) => setInputMessage(e.target.value)}
                                             placeholder="Ask a question or make a change..."
-                                            className="w-full bg-transparent border-none focus:ring-0 text-[14px] text-slate-800 placeholder:text-slate-400 resize-none py-1 max-h-32 overflow-y-hidden"
+                                            className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-[14px] text-slate-800 placeholder:text-slate-400 resize-none py-1 max-h-32 overflow-y-hidden"
                                             rows={1}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
@@ -954,7 +1080,125 @@ export function ChatPage() {
                                 </div>
                             </ScrollArea>
                         </div>
-                    ) : activeMessage !== 'document' ? (
+                    ) : activeMessage.startsWith('document_') ? (
+                        // ===== 文档视图 =====
+                        (() => {
+                            const docSessionId = activeMessage.replace('document_', '');
+                            const docSession = sessions.find(s => s.id === docSessionId);
+                            const docTitle = docSession ? docSession.prompt.slice(0, 16) + ' 设计评审' : '设计评审文档';
+                            return (
+                                <div className="flex-1 bg-white relative flex flex-col h-full">
+                                    {/* Doc Top Bar */}
+                                    <div className="h-14 border-b border-gray-100 flex items-center justify-between px-5 shrink-0 bg-white">
+                                        {/* 左侧：文档图标 + 标题 */}
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                                                <FileText size={14} className="text-indigo-600" />
+                                            </div>
+                                            <span className="text-sm font-semibold text-gray-800 truncate">{docTitle}</span>
+                                        </div>
+                                        {/* 右侧：操作按钮一行排列 */}
+                                        <div className="flex items-center gap-2 shrink-0 ml-4">
+                                            {/* 分享按钮 (图2样式) */}
+                                            <button className="h-8 px-4 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[12px] transition active:scale-95">
+                                                <Share size={14} strokeWidth={2.5} />
+                                                <span>分享</span>
+                                            </button>
+                                            {/* 复制按钮 (图2样式) */}
+                                            <button title="复制" className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
+                                                <Copy size={14} strokeWidth={2.5} />
+                                            </button>
+                                            {/* 下载按钮 (图2样式) */}
+                                            <button title="下载" className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
+                                                <Download size={14} strokeWidth={2.5} />
+                                            </button>
+                                            
+                                            <div className="w-px h-4 bg-gray-200 mx-1" />
+                                            
+                                            {/* 全屏和关闭 (极简样式) */}
+                                            <button title="全屏" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition active:scale-95">
+                                                <Maximize2 size={15} strokeWidth={2} />
+                                            </button>
+                                            <button
+                                                title="关闭"
+                                                onClick={() => setActiveMessage(docSessionId)}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition active:scale-95"
+                                            >
+                                                <X size={16} strokeWidth={2.5} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {/* Doc Body */}
+                                    <ScrollArea className="flex-1 bg-white">
+                                        <div className="max-w-3xl mx-auto px-12 py-10">
+                                            <h1 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">墨刀AI平台UI设计规范评审报告</h1>
+                                            <div className="text-sm font-medium text-gray-400 mb-8 pb-8 border-b border-gray-100">
+                                                UI Specification &amp; Visual Design Review &nbsp;·&nbsp; 评审日期：2026年02月26日
+                                            </div>
+
+                                            <h2 className="text-lg font-bold text-gray-800 mb-4 mt-8">执行摘要</h2>
+                                            <h3 className="text-sm font-bold text-gray-700 mb-2">评审范围与输入</h3>
+                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-6">本次评审基于提供的AI辅助工具网页界面截图进行。通过识图分析，界面被识别为"墨刀AI"平台的首页，包含顶部导航、中部主交互区（智能体问候、功能输入框、快捷功能入口）以及底部的精选案例展示区。评审聚焦于视觉规范与用户体验的五维度分析。</p>
+                                            <h3 className="text-sm font-bold text-gray-700 mb-2">核心结论</h3>
+                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-8">界面整体呈现现代简约的扁平化设计风格，视觉层级清晰，核心交互区聚焦。主要亮点在于清晰的布局结构和科技感的色彩点缀。优化空间主要集中在底部区域留白、辅助功能的视觉引导一致性以及可访问性细节上。综合评分为 <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>。</p>
+
+                                            <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">综合评分</h2>
+                                            <h3 className="text-sm font-bold text-gray-700 mb-2">总体评分：78/100</h3>
+                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-6">界面视觉基础良好，遵循了简约清晰的设计原则。色彩方案和布局结构表现出色，但在细节一致性、留白节奏和可访问性方面存在明确的优化空间，提升后将显著增强专业感和易用性。</p>
+
+                                            <div className="overflow-x-auto mb-8">
+                                                <table className="w-full text-[13px] border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-gray-50">
+                                                            <th className="text-left px-4 py-3 font-bold text-gray-700 border border-gray-100 rounded-tl-lg">评审维度</th>
+                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">评分(0-100)</th>
+                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">权重</th>
+                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">加权得分</th>
+                                                            <th className="text-left px-4 py-3 font-bold text-gray-700 border border-gray-100 rounded-tr-lg">简要说明</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {[
+                                                            { dim: '视觉一致性', score: 75, weight: '25%', weighted: 18.75, note: '色彩、字体基本统一，局部控件差异较大' },
+                                                            { dim: '布局与留白', score: 72, weight: '20%', weighted: 14.4, note: '底部内容区域偏拥挤，整体节奏待改善' },
+                                                            { dim: '色彩美学', score: 85, weight: '20%', weighted: 17.0, note: '主色调清晰，渐变点缀科技感强' },
+                                                            { dim: '排版层级', score: 80, weight: '20%', weighted: 16.0, note: '标题与正文层级清晰，小字可读性略低' },
+                                                            { dim: '可访问性', score: 62, weight: '15%', weighted: 9.3, note: '对比度不足，缺少焦点指示器' },
+                                                        ].map((row, i) => (
+                                                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                                                                <td className="px-4 py-3 border border-gray-100 font-medium text-gray-700">{row.dim}</td>
+                                                                <td className="px-4 py-3 border border-gray-100 text-center font-bold text-indigo-600">{row.score}</td>
+                                                                <td className="px-4 py-3 border border-gray-100 text-center text-gray-500">{row.weight}</td>
+                                                                <td className="px-4 py-3 border border-gray-100 text-center text-gray-600">{row.weighted}</td>
+                                                                <td className="px-4 py-3 border border-gray-100 text-gray-500">{row.note}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">优化建议优先级</h2>
+                                            <div className="space-y-3 mb-8">
+                                                {[
+                                                    { level: 'P0', color: 'bg-red-100 text-red-600', label: '立即优化', text: '底部区域内容间距过小，需增大 padding 至少 16px，避免视觉拥挤。' },
+                                                    { level: 'P1', color: 'bg-amber-100 text-amber-600', label: '近期优化', text: '可访问性对比度问题：灰色辅助文字需调整至 WCAG AA 标准（至少 4.5:1）。' },
+                                                    { level: 'P2', color: 'bg-blue-100 text-blue-600', label: '中期规划', text: '统一所有卡片组件的圆角半径为 12px，保持全局一致性。' },
+                                                ].map((item, i) => (
+                                                    <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                                        <span className={`shrink-0 text-[11px] font-black px-2 py-0.5 rounded-md ${item.color}`}>{item.level}</span>
+                                                        <div>
+                                                            <span className="text-[13px] font-bold text-gray-700 mr-2">{item.label}</span>
+                                                            <span className="text-[13px] text-gray-500">{item.text}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+                            );
+                        })()
+                    ) : (
                         <>
                             {/* View Toolbar */}
                             <div className="h-14 border-b border-slate-50 flex items-center px-4 shrink-0 bg-white">
@@ -1051,7 +1295,7 @@ export function ChatPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 ml-auto shrink-0 overflow-hidden">
+                                <div className="flex items-center gap-1.5 ml-auto shrink-0">
                                     <button className="h-8 px-4 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/50 text-indigo-700 font-bold text-[12px] transition shrink-0 hover:bg-indigo-100 active:scale-95 shadow-sm shadow-indigo-100/50 whitespace-nowrap">
                                         <Share2 size={13} strokeWidth={2.5} className="text-indigo-500" /> 导出至墨刀
                                     </button>
@@ -1094,30 +1338,24 @@ export function ChatPage() {
                                     </div>
                                 </div>
                             </div>
-
                             <div className="flex-1 flex overflow-hidden bg-white relative">
                                 {/* Left Panel: File Tree */}
-                                {(isDirOpen || activeTab === 'config') && activeTab !== 'analytics' && (
-                                    <div className="w-[180px] bg-[#FAFAFA] flex flex-col shrink-0 transition-all duration-300 order-0 relative group border-r border-slate-100">
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[4px] h-10 bg-[#E2E8F0] opacity-0 group-hover:opacity-100 group-hover:bg-[#CBD5E1] rounded-full z-10 transition-all duration-200 ease-out" />
-                                        <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100 bg-transparent pl-5">
-                                            <div className="text-[12px] font-black text-slate-900 tracking-wider uppercase">
-                                                {activeTab === 'config' ? '设置类别' : '目录'}
-                                            </div>
-                                            {activeTab !== 'config' && (
-                                                <button
-                                                    onClick={() => setIsDirOpen(false)}
-                                                    className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-all opacity-60 hover:opacity-100"
-                                                    title="收起目录"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path d="m15 9-3 3 3 3" /></svg>
-                                                </button>
-                                            )}
-                                        </div>
-                                        <ScrollArea className="flex-1">
-                                            <div className="p-2 space-y-0.5">
-                                                {activeTab === 'config' ? (
-                                                    <>
+                                {(() => {
+                                    const cs = sessions.find(s => s.id === activeMessage);
+                                    const showDir = getShowDir(cs);
+                                    const hasDir = canHaveDir(cs);
+                                    const isAppCodeDir = cs?.selectedFileType === 'app' && activeTab === 'code';
+                                    const isMultiDir = cs?.selectedFileType === 'multi';
+
+                                    // config tab 用原逻辑
+                                    if (activeTab === 'config') {
+                                        return (
+                                            <div className="w-[180px] bg-[#FAFAFA] flex flex-col shrink-0 order-0 border-r border-slate-100">
+                                                <div className="h-14 flex items-center px-5 border-b border-slate-100">
+                                                    <div className="text-[12px] font-black text-slate-900 tracking-wider uppercase">设置类别</div>
+                                                </div>
+                                                <ScrollArea className="flex-1">
+                                                    <div className="p-2 space-y-0.5">
                                                         <FileItem name="Overview" active={true} />
                                                         <FileItem name="AI" />
                                                         <FileItem name="Custom emails" />
@@ -1128,36 +1366,71 @@ export function ChatPage() {
                                                         <FileItem name="Edge functions" />
                                                         <FileItem name="SQL editor" />
                                                         <FileItem name="Logs" />
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div onClick={() => setActiveFile('index.html')}><FileItem name="index.html" active={activeFile === 'index.html'} /></div>
-                                                        <div onClick={() => setActiveFile('cart.html')}><FileItem name="cart.html" active={activeFile === 'cart.html'} /></div>
-                                                        <div onClick={() => setActiveFile('detail.html')}><FileItem name="detail.html" active={activeFile === 'detail.html'} /></div>
-                                                        <div onClick={() => setActiveFile('profile.html')}><FileItem name="profile.html" active={activeFile === 'profile.html'} /></div>
-                                                    </>
-                                                )}
+                                                    </div>
+                                                </ScrollArea>
                                             </div>
-                                        </ScrollArea>
-                                    </div>
-                                )}
+                                        );
+                                    }
+
+                                    // 没有目录的情况不渲染
+                                    if (!hasDir) return null;
+
+                                    // 目录收起态：左侧不渲染任何东西，展开按钮移到右侧toolbar
+                                    if (!showDir) return null;
+
+                                    // 目录展开态
+                                    return (
+                                        <div className="w-[180px] bg-[#FAFAFA] flex flex-col shrink-0 transition-all duration-300 order-0 border-r border-slate-100">
+                                            <div className="h-14 flex items-center justify-between px-5 border-b border-slate-100">
+                                                <div className="text-[12px] font-black text-slate-900 tracking-wider">目录</div>
+                                                {/* 收起箭头 ← 图2样式 */}
+                                                <button
+                                                    onClick={() => setIsDirOpen(false)}
+                                                    className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-200 flex items-center justify-center transition-all"
+                                                    title="收起目录"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                                </button>
+                                            </div>
+                                            <ScrollArea className="flex-1">
+                                                <div className="p-2 space-y-0.5">
+                                                    {isMultiDir ? (
+                                                        <>
+                                                            <div onClick={() => setActiveFile('index.html')}><FileItem name="index.html" active={activeFile === 'index.html'} /></div>
+                                                            <div onClick={() => setActiveFile('cart.html')}><FileItem name="cart.html" active={activeFile === 'cart.html'} /></div>
+                                                            <div onClick={() => setActiveFile('detail.html')}><FileItem name="detail.html" active={activeFile === 'detail.html'} /></div>
+                                                            <div onClick={() => setActiveFile('profile.html')}><FileItem name="profile.html" active={activeFile === 'profile.html'} /></div>
+                                                        </>
+                                                    ) : isAppCodeDir ? (
+                                                        <FolderTree activeFile={activeFile} onSelectFile={setActiveFile} />
+                                                    ) : null}
+                                                </div>
+                                            </ScrollArea>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Main Content: Preview Area */}
                                 <div className="flex-1 bg-white overflow-hidden relative flex flex-col order-1">
                                     {/* Browser/Simulator Chrome */}
                                     {activeTab !== 'config' && activeTab !== 'analytics' && (
-                                        <div className="h-14 border-b border-slate-50 flex items-center px-4 bg-transparent shrink-0 relative">
-                                            {/* 目录切换按钮（目录收起时在此行显示） */}
-                                            {!isDirOpen && (
-                                                <button
-                                                    onClick={() => setIsDirOpen(true)}
-                                                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 text-[12px] font-bold transition-all active:scale-95 mr-2 shrink-0 shadow-sm"
-                                                    title="展开目录"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
-                                                    目录
-                                                </button>
-                                            )}
+                                        <div className="h-14 border-b border-slate-50 flex items-center px-4 bg-transparent shrink-0 relative gap-2">
+                                            {/* 目录收起时在此处显示展开按钮（图4样式，与截图优化同行） */}
+                                            {(() => {
+                                                const cs = sessions.find(s => s.id === activeMessage);
+                                                if (!isDirOpen && canHaveDir(cs)) {
+                                                    return (
+                                                        <button
+                                                            onClick={() => setIsDirOpen(true)}
+                                                            className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 text-[12px] font-bold transition-all active:scale-95 shrink-0 shadow-sm"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                                                            目录
+                                                        </button>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                             {/* 截图优化按钮 & 地址栏：代码tab下隐藏；代码tab显示当前文件名 */}
                                             {activeTab === 'code' && (
                                                 <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-[12px] font-mono font-bold shrink-0 shadow-sm">
@@ -1333,138 +1606,6 @@ export function ChatPage() {
                                 </div>
                             </div>
                         </>
-                    ) : (
-                        <>
-                            {/* Document View Toolbar */}
-                            <div className="h-14 border-b border-slate-50 flex items-center justify-between px-6 shrink-0 bg-white">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-indigo-50 text-indigo-500 flex items-center justify-center rounded-lg border border-indigo-100">
-                                        <FileText size={16} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="font-bold text-slate-800 text-[14px]">墨刀AI界面设计评审</div>
-                                </div>
-
-                                <div className="flex items-center gap-2.5">
-                                    <Button variant="outline" className="h-8 px-5 rounded-lg text-indigo-700 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 font-bold text-[12px] transition active:scale-95">
-                                        <Share2 size={13} strokeWidth={2.5} className="mr-1.5" />
-                                        导出至墨刀
-                                    </Button>
-                                    <div className="relative" ref={sharePanelRef}>
-                                        <Button
-                                            onClick={() => { setShowSharePanel(v => !v); setShowPublishModal(false); }}
-                                            className={cn("bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 rounded-lg h-8 px-5 text-[12px] font-bold transition active:scale-95", showSharePanel && "bg-slate-200")}
-                                        >
-                                            <Share size={13} strokeWidth={2.5} className="mr-1.5" />
-                                            分享
-                                        </Button>
-                                        {showSharePanel && shareDropdown}
-                                    </div>
-                                    <div className="relative" ref={publishPanelRef}>
-                                        <Button
-                                            onClick={() => { setShowPublishModal(v => !v); setShowSharePanel(false); }}
-                                            className="bg-black hover:bg-slate-800 text-white rounded-lg h-8 px-6 text-[12px] font-black shadow-md shadow-black/10 transition active:scale-95 border border-white/5"
-                                        >
-                                            发布
-                                        </Button>
-                                        {showPublishModal && publishDropdown}
-                                    </div>
-
-                                    <div className="flex items-center ml-2 border-slate-100 gap-0.5">
-                                        <div className="relative group flex justify-center">
-                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Download size={14} strokeWidth={2.25} /></button>
-                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载</div>
-                                        </div>
-                                        <div className="relative group flex justify-center ml-1">
-                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Copy size={14} strokeWidth={2.25} /></button>
-                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">复制</div>
-                                        </div>
-                                        <div className="w-[1px] h-4 bg-slate-200 mx-2" />
-                                        <div className="relative group flex justify-center">
-                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-900 hover:text-white transition text-slate-700 active:scale-95"><Maximize2 size={15} strokeWidth={2.25} /></button>
-                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">全屏</div>
-                                        </div>
-                                        <div className="relative group flex justify-center">
-                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 hover:text-red-600 transition text-slate-700 active:scale-95"><X size={16} strokeWidth={2.5} /></button>
-                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">关闭</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Markdown Document Content */}
-                            <ScrollArea className="flex-1 bg-[#FAFAFC]">
-                                <div className="max-w-4xl mx-auto py-12 px-8">
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 min-h-[800px]">
-                                        <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">墨刀AI平台UI设计规范评审报告</h1>
-                                        <div className="text-sm font-medium text-gray-500 mb-8 pb-8 border-b border-gray-100">
-                                            UI Specification & Visual Design Review <br />
-                                            评审日期：2026年02月26日
-                                        </div>
-
-                                        <h2 className="text-xl font-bold text-gray-800 mb-4 mt-8">执行摘要</h2>
-                                        <h3 className="text-base font-bold text-gray-700 mb-2">评审范围与输入</h3>
-                                        <p className="text-[14px] text-gray-600 leading-relaxed mb-6">
-                                            本次评审基于提供的AI辅助工具网页界面截图进行。通过识图分析，界面被识别为“墨刀AI”平台的首页，包含顶部导航、中部主交互区（智能体问候、功能输入框、快捷功能入口）以及底部的精选案例展示区。评审聚焦于视觉规范与用户体验的五维度分析。
-                                        </p>
-
-                                        <h3 className="text-base font-bold text-gray-700 mb-2">核心结论</h3>
-                                        <p className="text-[14px] text-gray-600 leading-relaxed mb-8">
-                                            界面整体呈现现代简约的扁平化设计风格，视觉层级清晰，核心交互区聚焦。主要亮点在于清晰的布局结构和科技感的色彩点缀。优化空间主要集中在底部区域留白、辅助功能的视觉引导一致性以及可访问性细节上。综合评分为 <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>。
-                                        </p>
-
-                                        <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">综合评分</h2>
-                                        <h3 className="text-base font-bold text-gray-700 mb-4">总体评分：78/100</h3>
-                                        <p className="text-[14px] text-gray-600 leading-relaxed mb-6">
-                                            界面视觉基础良好，遵循了简约清晰的设计原则。色彩方案和布局结构表现出色，但在细节一致性、留白节奏和可访问性方面存在明确的优化空间，提升后将显著增强专业感和易用性。
-                                        </p>
-
-                                        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                                            <table className="w-full text-left text-[13px] text-gray-600">
-                                                <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
-                                                    <tr>
-                                                        <th className="px-4 py-3 font-semibold">评审维度</th>
-                                                        <th className="px-4 py-3 font-semibold">评分(0-100)</th>
-                                                        <th className="px-4 py-3 font-semibold">权重</th>
-                                                        <th className="px-4 py-3 font-semibold">加权得分</th>
-                                                        <th className="px-4 py-3 font-semibold">简要说明</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-100">
-                                                    <tr>
-                                                        <td className="px-4 py-3 font-medium">视觉层级 (Visual Hierarchy)</td>
-                                                        <td className="px-4 py-3">85</td>
-                                                        <td className="px-4 py-3 text-gray-500">25%</td>
-                                                        <td className="px-4 py-3">21.25</td>
-                                                        <td className="px-4 py-3 text-gray-500 leading-relaxed">视线流清晰，核心输入区焦点明确，但底部辅助内容层级感稍弱。</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="px-4 py-3 font-medium">一致性 (Consistency)</td>
-                                                        <td className="px-4 py-3">70</td>
-                                                        <td className="px-4 py-3 text-gray-500">25%</td>
-                                                        <td className="px-4 py-3">17.50</td>
-                                                        <td className="px-4 py-3 text-gray-500 leading-relaxed">顶部按钮与中部色彩统一性好，但功能图标风格与“精选案例”卡片样式存在不一致。</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="px-4 py-3 font-medium">排版与留白 (Typography & Layout)</td>
-                                                        <td className="px-4 py-3">75</td>
-                                                        <td className="px-4 py-3 text-gray-500">20%</td>
-                                                        <td className="px-4 py-3">15.00</td>
-                                                        <td className="px-4 py-3 text-gray-500 leading-relaxed">整体布局遵循网格，主区域呼吸感佳，但底部案例区域内部与外部间距不协调。</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="px-4 py-3 font-medium">色彩美学 (Color Aesthetics)</td>
-                                                        <td className="px-4 py-3">85</td>
-                                                        <td className="px-4 py-3 text-gray-500">20%</td>
-                                                        <td className="px-4 py-3">17.00</td>
-                                                        <td className="px-4 py-3 text-gray-500 leading-relaxed">主色调干净，辅助色点缀恰当，营造了专业、科技的视觉氛围。</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </ScrollArea>
-                        </>
                     )
                     }
 
@@ -1472,13 +1613,17 @@ export function ChatPage() {
             </div >
 
             {/* ======= 截图优化模态 ======= */}
-            {
-                showScreenshotMode && (
-                    <div className="fixed inset-0 z-[200] flex flex-col bg-gray-950/95 backdrop-blur-sm">
-                        {/* 截图模式顶栏 */}
-                        <div className="h-14 flex items-center justify-between px-6 border-b border-white/10 shrink-0">
+            {showScreenshotMode && (() => {
+                const screenshotSession = sessions.find(s => s.id === activeMessage);
+                const screenshotHtml = screenshotSession?.generatedHtml || screenshotSession?.streamingCode || '';
+                return (
+                    <div className="fixed inset-0 z-[200] flex flex-col bg-gray-950">
+                        {/* shake keyframes */}
+                        <style>{`@keyframes comment-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}.comment-shake{animation:comment-shake 0.45s ease;}`}</style>
+                        {/* 顶栏 */}
+                        <div className="h-14 flex items-center justify-between px-6 border-b border-white/10 shrink-0 bg-gray-950">
                             <div className="flex items-center gap-3">
-                                <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center">
+                                <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center shrink-0">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
                                 </div>
                                 <span className="text-white text-sm font-semibold">截图优化</span>
@@ -1487,156 +1632,182 @@ export function ChatPage() {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => {
-                                        const newImg = {
-                                            id: Date.now(),
-                                            label: `截图 ${capturedImages.length + 1}`,
-                                            comments: comments.map(c => c.text).filter(Boolean)
-                                        };
+                                        const newImg = { id: Date.now(), label: `截图 ${capturedImages.length + 1}`, comments: comments.map(c => c.text).filter(Boolean) };
                                         setCapturedImages(prev => [...prev, newImg]);
                                         setShowScreenshotMode(false);
                                         setComments([]);
                                     }}
-                                    className="h-8 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition flex items-center gap-2"
+                                    className="h-8 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition flex items-center gap-2 active:scale-95"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
                                     添加到对话
                                 </button>
-                                <button
-                                    onClick={() => { setShowScreenshotMode(false); setComments([]); }}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/60 transition"
-                                >
+                                <button onClick={() => { setShowScreenshotMode(false); setComments([]); }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/60 transition">
                                     <X size={18} />
                                 </button>
                             </div>
                         </div>
 
-                        {/* 截图画布区域 */}
-                        {/* 截图画布区域 - 全视图展示无限制 */}
-                        <div className="flex-1 overflow-auto flex items-start justify-center p-8 bg-black/20">
-                            <div className="w-full min-h-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-                                {/* 实际生成的完整内容（取消了定宽及定高限制） */}
-                                <div
-                                    className="flex-1 p-12 bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center gap-6 relative cursor-crosshair overflow-hidden"
-                                    onMouseDown={handleMouseDown}
-                                    onMouseMove={handleMouseMove}
-                                    onMouseUp={handleMouseUp}
-                                    onMouseLeave={handleMouseUp}
-                                >
-                                    <div className="text-4xl font-black text-gray-900 pointer-events-none">你好，我是<span className="text-indigo-600">墨刀AI</span></div>
-                                    <div className="text-xl text-gray-600 pointer-events-none">今天想设计点什么？</div>
-                                    <div className="flex gap-3 mt-4 pointer-events-none">
-                                        {['生成页面布局', '自动连接跳转', '文案自动填充'].map(t => (
-                                            <div key={t} className="px-4 py-2 rounded-full border border-indigo-200 text-indigo-600 text-sm font-medium bg-white">{t}</div>
-                                        ))}
-                                    </div>
-                                    {/* 模拟页面向下延伸的占位内容 */}
-                                    <div className="mt-12 w-full max-w-4xl space-y-8 pointer-events-none">
-                                        <div className="h-32 bg-white rounded-xl shadow-sm border border-indigo-100 flex items-center justify-center text-indigo-300">实际生成区域板块 1</div>
-                                        <div className="h-64 bg-white rounded-xl shadow-sm border border-purple-100 flex items-center justify-center text-purple-300">实际生成区域板块 2 (高度可由内容撑开)</div>
-                                    </div>
+                        {/* 画布区域 */}
+                        <div className="flex-1 overflow-auto bg-gray-900/60">
+                            <div
+                                data-canvas="true"
+                                className="relative w-full min-h-full select-none cursor-crosshair"
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseUp}
+                            >
+                                {/* 实际预览内容 - 与预览 tab 一致的 iframe */}
+                                {screenshotHtml ? (
+                                    <iframe
+                                        srcDoc={screenshotHtml}
+                                        sandbox="allow-scripts allow-same-origin"
+                                        className="w-full min-h-screen border-none pointer-events-none"
+                                        style={{ height: '100vh' }}
+                                        title="screenshot-preview"
+                                    />
+                                ) : (
+                                    <div className="w-full h-screen flex items-center justify-center text-white/40 text-sm">暂无可预览的内容</div>
+                                )}
 
-                                    {/* 绘制中的选框 */}
-                                    {isDrawing && (
-                                        <div
-                                            className="absolute border-2 border-indigo-500 bg-indigo-500/10 pointer-events-none z-50 rounded"
-                                            style={{
-                                                left: Math.min(startPos.x, currentPos.x),
-                                                top: Math.min(startPos.y, currentPos.y),
-                                                width: Math.abs(currentPos.x - startPos.x),
-                                                height: Math.abs(currentPos.y - startPos.y)
-                                            }}
-                                        />
-                                    )}
+                                {/* 绘制中的实时选框 */}
+                                {isDrawing && (
+                                    <div
+                                        className="absolute border-2 border-indigo-400 bg-indigo-400/10 pointer-events-none z-30 rounded"
+                                        style={{ left: Math.min(startPos.x, currentPos.x), top: Math.min(startPos.y, currentPos.y), width: Math.abs(currentPos.x - startPos.x), height: Math.abs(currentPos.y - startPos.y) }}
+                                    />
+                                )}
 
-                                    {/* 已添加的评论框 */}
-                                    {comments.map((comment, index) => (
+                                {/* 已有标注框 */}
+                                {comments.map((comment, index) => {
+                                    if (comment.confirmed) {
+                                        // 已确认态：仅显示数字徽章，hover 时展开选框+文本+删除按钮
+                                        return (
+                                            <div
+                                                key={comment.id}
+                                                className="absolute comment-box-interactive"
+                                                style={{ left: comment.rect.x, top: comment.rect.y, width: comment.rect.w, height: comment.rect.h }}
+                                            >
+                                                {/* 数字徽章 - 始终可见 */}
+                                                <div
+                                                    className="absolute -top-3 -left-3 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md z-50 cursor-pointer"
+                                                    onMouseEnter={() => setHoveredBadge(comment.id)}
+                                                    onMouseLeave={() => setHoveredBadge(null)}
+                                                >
+                                                    {index + 1}
+                                                </div>
+                                                {/* hover 时展开选框和弹出内容 */}
+                                                {hoveredBadge === comment.id && (
+                                                    <>
+                                                        <div className="absolute inset-0 border-2 border-indigo-400 rounded pointer-events-none" />
+                                                        <div
+                                                            className={cn("absolute left-0 bg-white rounded-xl shadow-xl p-3 border border-indigo-100 z-50 min-w-[12rem] max-w-xs", comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2")}
+                                                            onMouseEnter={() => setHoveredBadge(comment.id)}
+                                                            onMouseLeave={() => setHoveredBadge(null)}
+                                                            onMouseDown={e => e.stopPropagation()}
+                                                        >
+                                                            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-2">{comment.text}</p>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setComments(prev => prev.filter(c => c.id !== comment.id)); setHoveredBadge(null); }}
+                                                                className="text-[11px] font-bold text-red-500 hover:text-red-700 transition flex items-center gap-1"
+                                                            >
+                                                                <X size={11} strokeWidth={3} /> 删除
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+
+                                    // 未确认态（编辑中）
+                                    return (
                                         <div
                                             key={comment.id}
-                                            className="absolute border-2 border-indigo-500 bg-transparent z-40 rounded comment-box-interactive group"
-                                            style={{
-                                                left: comment.rect.x,
-                                                top: comment.rect.y,
-                                                width: comment.rect.w,
-                                                height: comment.rect.h
-                                            }}
+                                            className={cn("absolute border-2 border-indigo-500 rounded comment-box-interactive", comment.shaking && "comment-shake")}
+                                            style={{ left: comment.rect.x, top: comment.rect.y, width: comment.rect.w, height: comment.rect.h }}
                                         >
-                                            <div className="absolute -top-3 -left-3 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md cursor-default">
+                                            {/* 数字徽章 */}
+                                            <div className="absolute -top-3 -left-3 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md z-50 cursor-default">
                                                 {index + 1}
                                             </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setComments(prev => prev.filter(c => c.id !== comment.id));
-                                                }}
-                                                className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 active:scale-95"
-                                            >
-                                                <X size={12} strokeWidth={3} />
-                                            </button>
 
-                                            {comment.isEditing ? (
-                                                <div
-                                                    className={cn(
-                                                        "absolute left-0 bg-white rounded-xl shadow-xl w-64 p-3 border border-indigo-100 z-50",
-                                                        comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2",
-                                                        comment.rect.x > 800 && "-left-40"
-                                                    )}
-                                                    onMouseDown={e => e.stopPropagation()}
-                                                >
-                                                    <textarea
-                                                        autoFocus
-                                                        value={comment.text}
-                                                        onChange={e => setComments(prev => prev.map(c => c.id === comment.id ? { ...c, text: e.target.value } : c))}
-                                                        className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                                                        rows={2}
-                                                        placeholder="输入评论..."
-                                                        onKeyDown={e => {
-                                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                                e.preventDefault();
-                                                                if (comment.text.trim()) {
-                                                                    setComments(prev => prev.map(c => c.id === comment.id ? { ...c, isEditing: false } : c));
-                                                                }
+                                            {/* 框体拖动 - 中心区域抓手 */}
+                                            <div
+                                                className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                                                onMouseDown={e => {
+                                                    e.stopPropagation();
+                                                    const canvasRect = (e.currentTarget.closest('[data-canvas]') as HTMLElement)?.getBoundingClientRect();
+                                                    if (!canvasRect) return;
+                                                    setDraggingComment({ id: comment.id, startMX: e.clientX - canvasRect.left, startMY: e.clientY - canvasRect.top, origX: comment.rect.x, origY: comment.rect.y });
+                                                }}
+                                            />
+
+                                            {/* 右下角调整大小手柄 */}
+                                            <div
+                                                className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border-2 border-indigo-500 rounded-sm cursor-nwse-resize z-50 flex items-center justify-center"
+                                                onMouseDown={e => {
+                                                    e.stopPropagation();
+                                                    const canvasRect = (e.currentTarget.closest('[data-canvas]') as HTMLElement)?.getBoundingClientRect();
+                                                    if (!canvasRect) return;
+                                                    setResizingComment({ id: comment.id, startMX: e.clientX - canvasRect.left, startMY: e.clientY - canvasRect.top, origW: comment.rect.w, origH: comment.rect.h });
+                                                }}
+                                            >
+                                                <svg width="7" height="7" viewBox="0 0 7 7" fill="none"><path d="M1 6L6 1M4 6L6 4" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                            </div>
+
+                                            {/* 输入面板 */}
+                                            <div
+                                                className={cn("absolute left-0 bg-white rounded-xl shadow-xl w-64 p-3 border border-indigo-100 z-50", comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2", comment.rect.x > 800 && "-left-40")}
+                                                onMouseDown={e => e.stopPropagation()}
+                                            >
+                                                <textarea
+                                                    autoFocus
+                                                    value={comment.text}
+                                                    onChange={e => setComments(prev => prev.map(c => c.id === comment.id ? { ...c, text: e.target.value } : c))}
+                                                    className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                                                    rows={2}
+                                                    placeholder="输入评论..."
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                            e.preventDefault();
+                                                            if (comment.text.trim()) {
+                                                                setComments(prev => prev.map(c => c.id === comment.id ? { ...c, isEditing: false, confirmed: true } : c));
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                                <div className="flex justify-between items-center mt-2">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setComments(prev => prev.filter(c => c.id !== comment.id)); }}
+                                                        className="text-[12px] font-bold text-slate-400 hover:text-slate-600 transition"
+                                                    >
+                                                        取消
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (comment.text.trim()) {
+                                                                setComments(prev => prev.map(c => c.id === comment.id ? { ...c, isEditing: false, confirmed: true } : c));
+                                                            } else {
+                                                                setComments(prev => prev.filter(c => c.id !== comment.id));
                                                             }
                                                         }}
-                                                    />
-                                                    <div className="flex justify-end mt-2">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (comment.text.trim()) {
-                                                                    setComments(prev => prev.map(c => c.id === comment.id ? { ...c, isEditing: false } : c));
-                                                                } else {
-                                                                    setComments(prev => prev.filter(c => c.id !== comment.id));
-                                                                }
-                                                            }}
-                                                            className="px-3 py-1.5 bg-indigo-500 text-white text-[12px] font-bold rounded-lg hover:bg-indigo-600 transition active:scale-95 shadow-sm"
-                                                        >
-                                                            确定
-                                                        </button>
-                                                    </div>
+                                                        className="px-3 py-1.5 bg-indigo-500 text-white text-[12px] font-bold rounded-lg hover:bg-indigo-600 transition active:scale-95 shadow-sm"
+                                                    >
+                                                        确定
+                                                    </button>
                                                 </div>
-                                            ) : (
-                                                <div
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setComments(prev => prev.map(c => c.id === comment.id ? { ...c, isEditing: true } : c));
-                                                    }}
-                                                    className={cn(
-                                                        "absolute left-0 bg-white rounded-xl shadow-xl max-w-xs min-w-[12rem] p-3 border border-indigo-100 cursor-text hover:border-indigo-300 transition z-50 text-left",
-                                                        comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2",
-                                                        comment.rect.x > 800 && "-left-40"
-                                                    )}
-                                                >
-                                                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{comment.text || '点击添加评论'}</p>
-                                                </div>
-                                            )}
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
-                )
-            }
+                );
+            })()}
 
             {/* (已通过下拉框替代的全屏发布模态框已移除) */}
         </>
@@ -1657,5 +1828,123 @@ function FileItem({ name, active }: { name: string, active?: boolean }) {
             </div>
             {name}
         </button>
+    );
+}
+
+// FolderTree: 应用类型代码tab下的多级文件夹树
+type FolderNode = { name: string; type: 'folder' | 'file'; children?: FolderNode[] };
+
+const APP_FILE_TREE: FolderNode[] = [
+    { name: 'src', type: 'folder', children: [
+        { name: 'components', type: 'folder', children: [
+            { name: 'Header.tsx', type: 'file' },
+            { name: 'Footer.tsx', type: 'file' },
+            { name: 'Button.tsx', type: 'file' },
+        ]},
+        { name: 'pages', type: 'folder', children: [
+            { name: 'Home.tsx', type: 'file' },
+            { name: 'Detail.tsx', type: 'file' },
+            { name: 'Cart.tsx', type: 'file' },
+        ]},
+        { name: 'App.tsx', type: 'file' },
+        { name: 'main.tsx', type: 'file' },
+        { name: 'index.css', type: 'file' },
+    ]},
+    { name: 'public', type: 'folder', children: [
+        { name: 'index.html', type: 'file' },
+    ]},
+    { name: 'package.json', type: 'file' },
+    { name: 'tsconfig.json', type: 'file' },
+];
+
+// 根据文件名判断类型，用于在目录树中选择不同图标
+function getFileIconType(fileName: string): 'logic' | 'style' | 'config' | 'asset' | 'doc' {
+    const name = fileName.toLowerCase();
+    // 逻辑与组件类
+    if (/\.(tsx|jsx|ts|js|mjs|cjs)$/.test(name) || /route\.(ts|js)x?$/.test(name)) {
+        return 'logic';
+    }
+    // 样式类
+    if (/\.(css|scss|sass|less)$/.test(name) || /\.module\./.test(name)) {
+        return 'style';
+    }
+    // 配置与数据类
+    if (/\.(json|ya?ml|yml|prisma|sql)$/.test(name) || name.startsWith('.env') || name === '.gitignore' || name.includes('.config.')) {
+        return 'config';
+    }
+    // 资源类
+    if (/\.(png|jpe?g|svg|webp|ico|gif)$/.test(name)) {
+        return 'asset';
+    }
+    // 文档类
+    if (/\.(md|mdx|pdf|txt)$/.test(name)) {
+        return 'doc';
+    }
+    return 'logic';
+}
+
+function FolderTreeNode({ node, depth, activeFile, onSelectFile }: {
+    node: FolderNode;
+    depth: number;
+    activeFile: string;
+    onSelectFile: (f: string) => void;
+}) {
+    const [open, setOpen] = useState(depth < 2);
+    if (node.type === 'folder') {
+        return (
+            <div>
+                <button
+                    onClick={() => setOpen(v => !v)}
+                    className="w-full text-left flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] text-slate-500 hover:bg-slate-100 font-semibold transition"
+                    style={{ paddingLeft: `${8 + depth * 12}px` }}
+                >
+                    {/* 仅保留展开/收起箭头，不显示文件夹图标 */}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn('transition-transform shrink-0', open ? 'rotate-90' : '')}><path d="m9 18 6-6-6-6" /></svg>
+                    <span className="truncate">{node.name}</span>
+                </button>
+                {open && node.children?.map((child, i) => (
+                    <FolderTreeNode key={i} node={child} depth={depth + 1} activeFile={activeFile} onSelectFile={onSelectFile} />
+                ))}
+            </div>
+        );
+    }
+
+    const type = getFileIconType(node.name);
+
+    let icon = <FileText size={12} strokeWidth={2} className="shrink-0 text-slate-500" />;
+    if (type === 'logic') {
+        icon = <Code2 size={12} strokeWidth={2} className="shrink-0 text-indigo-500" />;
+    } else if (type === 'style') {
+        icon = <Palette size={12} strokeWidth={2} className="shrink-0 text-emerald-500" />;
+    } else if (type === 'config') {
+        icon = <Settings size={12} strokeWidth={2} className="shrink-0 text-amber-500" />;
+    } else if (type === 'asset') {
+        icon = <Image size={12} strokeWidth={2} className="shrink-0 text-purple-500" />;
+    } else if (type === 'doc') {
+        icon = <FileText size={12} strokeWidth={2} className="shrink-0 text-slate-500" />;
+    }
+
+    return (
+        <button
+            onClick={() => onSelectFile(node.name)}
+            className={cn(
+                'w-full text-left flex items-center gap-1.5 py-1 rounded-lg text-[12px] transition',
+                activeFile === node.name ? 'bg-slate-900 text-white font-bold' : 'text-slate-600 hover:bg-slate-50'
+            )}
+            style={{ paddingLeft: `${20 + depth * 12}px` }}
+        >
+            {icon}
+            <span className="truncate">{node.name}</span>
+        </button>
+    );
+}
+
+function FolderTree({ activeFile, onSelectFile }: { activeFile: string; onSelectFile: (f: string) => void }) {
+    return (
+        <div className="space-y-0.5">
+            {APP_FILE_TREE.map((node, i) => (
+                <FolderTreeNode key={i} node={node} depth={0} activeFile={activeFile} onSelectFile={onSelectFile} />
+            ))}
+        </div>
     );
 }
