@@ -1,28 +1,12 @@
 {
-  "buildCommand": "cd modao-d2d-app && npm install && npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".",
+  "buildCommand": "sh ./build.sh",
+  "installCommand": "echo 'Skipping root install, handled in build.sh'",
+  "outputDirectory": "vercel-dist",
   "framework": null,
   "rewrites": [
     {
-      "source": "/app",
-      "destination": "/modao-d2d-app/dist/index.html"
-    },
-    {
-      "source": "/app/",
-      "destination": "/modao-d2d-app/dist/index.html"
-    },
-    {
-      "source": "/app/:path*",
-      "destination": "/modao-d2d-app/dist/:path*"
-    },
-    {
-      "source": "/prd",
-      "destination": "/prd/index.html"
-    },
-    {
-      "source": "/prd/",
-      "destination": "/prd/index.html"
+      "source": "/app/:match*",
+      "destination": "/app/index.html"
     }
   ]
 }

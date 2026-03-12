@@ -55,11 +55,6 @@ export function ChatPage() {
     };
 
     // Publish modal enhanced state
-    const [siteTitle, setSiteTitle] = useState('电商购物App');
-    const [siteDescription, setSiteDescription] = useState('一款精美的电商购物移动端应用，支持商品浏览、购物车、结算等功能。');
-    const [thumbnailUrl, setThumbnailUrl] = useState('');
-    const thumbnailInputRef = useRef<HTMLInputElement>(null);
-
     const [isEditingUrl, setIsEditingUrl] = useState(false);
     const [editUrlValue, setEditUrlValue] = useState('');
     const [urlError, setUrlError] = useState('');
