@@ -478,16 +478,20 @@ export function ChatPage() {
                     />
                 </div>
 
-                {/* Status - only when published */}
-                {isPublished && (
-                    <div className="flex items-center gap-5">
-                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">当前状态</span>
+                {/* Status */}
+                <div className="flex items-center gap-5">
+                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">当前状态</span>
+                    {isPublished ? (
                         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[12px] font-semibold border border-emerald-100">
                             <CheckCircle2 size={13} strokeWidth={2.5} />
                             已发布
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="flex items-center gap-1.5 bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[12px] font-semibold border border-slate-200">
+                            未发布
+                        </div>
+                    )}
+                </div>
 
                 {/* Last published - only when published */}
                 {isPublished && publishedAt && (
@@ -519,7 +523,13 @@ export function ChatPage() {
                                     className="flex-1 bg-transparent text-[13px] font-medium text-gray-800 outline-none w-full"
                                 />
                             ) : (
-                                <span className="flex-1 text-[13px] font-medium text-gray-800 truncate">{customUrl}</span>
+                                <span 
+                                    className="flex-1 text-[13px] font-medium text-gray-800 truncate cursor-pointer hover:text-indigo-600 transition-colors" 
+                                    title="点击复制链接"
+                                    onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
+                                >
+                                    {customUrl}
+                                </span>
                             )}
                             <span className="text-[13px] font-medium text-gray-400 ml-1 shrink-0">.modao.site</span>
                         </div>
@@ -533,20 +543,7 @@ export function ChatPage() {
                                 {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
                             </button>
                             <button
-                                title="随机生成前缀"
-                                onClick={() => {
-                                    const rand = Math.random().toString(36).slice(2, 10);
-                                    setCustomUrl(rand);
-                                    setUrlError('');
-                                }}
-                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-                                </svg>
-                            </button>
-                            <button
-                                title="修改域名前缀"
+                                title="编辑域名前缀"
                                 onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }}
                                 className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
                             >
