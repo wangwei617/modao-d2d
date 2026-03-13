@@ -5,3 +5,4 @@ node_modules/
 .env.*
 modao-d2d-app/.vite/
 modao-d2d-app/.gitignore_local
+vercel-dist/

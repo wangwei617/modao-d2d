@@ -1636,7 +1636,7 @@ export function ChatPage() {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
                                 </div>
                                 <span className="text-white text-sm font-semibold">截图优化</span>
-                                <span className="text-white/40 text-xs">展示生成内容的实际样貌，可以进行框选内容并增加评论进行精细优化</span>
+                                <span className="text-white text-xs bg-indigo-500/20 text-indigo-200 px-2.5 py-1 rounded-md border border-indigo-500/30">请框选要调整的内容并增加评论</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
