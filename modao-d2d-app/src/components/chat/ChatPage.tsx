@@ -327,6 +327,7 @@ export function ChatPage() {
     // Close share panel when clicking outside
     useEffect(() => {
         const handler = (e: MouseEvent) => {
+            // Check if the click is inside any iframe. If so, don't try to handle it with DOM nodes.
             if (sharePanelRef.current && !sharePanelRef.current.contains(e.target as Node)) {
                 setShowSharePanel(false);
             }
@@ -340,8 +341,27 @@ export function ChatPage() {
                 setShowVersionMenu(false);
             }
         };
+
+        // Handle iframe clicks by listening to window blur
+        const handleBlur = () => {
+            // When clicking into an iframe, the window loses focus.
+            // We can close the dropdowns when this happens.
+            setTimeout(() => {
+                if (document.activeElement?.tagName === 'IFRAME') {
+                    setShowSharePanel(false);
+                    setShowPublishModal(false);
+                    setShowDeviceMenu(false);
+                    setShowVersionMenu(false);
+                }
+            }, 0);
+        };
+
         document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            window.removeEventListener('blur', handleBlur);
+        };
     }, []);
 
     const shareDropdown = (
