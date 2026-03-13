@@ -364,6 +364,14 @@ export function ChatPage() {
             </div>
 
             <div className="px-4 py-4 space-y-4">
+                {/* 分享说明 */}
+                <div className="text-[12px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-start gap-2">
+                    <div className="mt-0.5 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    </div>
+                    <span>{shareTab === 'project' ? '把整个对话和对话中生成的所有内容分享出去' : '只分享当前所选的文件'}</span>
+                </div>
+
                 {/* Access permission */}
                 <div>
                     <div className="text-[13px] font-bold text-slate-700 mb-2.5">链接访问权限</div>
@@ -1628,7 +1636,7 @@ export function ChatPage() {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
                                 </div>
                                 <span className="text-white text-sm font-semibold">截图优化</span>
-                                <span className="text-white/40 text-xs">展示生成内容的实际样貌</span>
+                                <span className="text-white/40 text-xs">展示生成内容的实际样貌，可以进行框选内容并增加评论进行精细优化</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
