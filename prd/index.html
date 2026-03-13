@@ -327,7 +327,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
     var isLocalFile = window.location.protocol === 'file:';
-    var RAW_URL = isLocalFile ? 'content.md' : '/prd/content.md';
+    // 直接读取端到端 PRD.md，无需生成中间副本 content.md
+    var RAW_URL = isLocalFile ? '../prd%20%26%20design/端到端%20PRD.md' : '/prd%20%26%20design/%E7%AB%AF%E5%88%B0%E7%AB%AF%20PRD.md';
     var IMG_BASE = isLocalFile ? '../assets/images/' : '/assets/images/';
 
     if (isLocalFile) {

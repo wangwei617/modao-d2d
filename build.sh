@@ -5,9 +5,6 @@ set -e
 rm -rf vercel-dist
 mkdir -p vercel-dist
 
-# 每次构建前同步最新 PRD 文档到 prd/content.md，确保线上与本地查看一致
-cp "prd & design/端到端 PRD.md" prd/content.md
-
 # 拷贝根目录静态资源
 cp index.html vercel-dist/
 cp -r assets vercel-dist/ || true
