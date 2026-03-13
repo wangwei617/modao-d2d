@@ -692,7 +692,12 @@ export function ChatPage() {
                 return (
                     <div className="flex-1 w-full h-full p-2 bg-slate-100/50">
                         {/* 模拟浏览器容器 */}
-                        <div className="w-full h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative">
+                        <div className={cn(
+                            "h-full overflow-hidden flex flex-col relative mx-auto transition-all duration-300",
+                            deviceMode === 'pc' ? "w-full bg-white rounded-xl border border-slate-200 shadow-sm" : 
+                            deviceMode === 'pad' ? "w-[800px] bg-white rounded-xl border border-slate-200 shadow-xl" :
+                            "w-[390px] bg-white rounded-xl border border-slate-200 shadow-xl"
+                        )}>
                             {/* Browser Bar */}
                             <div className="h-10 border-b border-slate-100 bg-slate-50/80 flex items-center px-4 gap-4">
                                 <div className="flex gap-1.5">
@@ -708,20 +713,11 @@ export function ChatPage() {
                                 </div>
                             </div>
                             {/* Iframe content */}
-                            <div className={cn(
-                                "relative w-full h-full flex-1 overflow-hidden transition-all duration-300",
-                                // 设备切换：如果是移动端或 Pad 端，背景加深色，居中显示定宽的 iframe 容器
-                                deviceMode !== 'pc' ? "bg-slate-100/80 flex items-center justify-center p-4" : ""
-                            )}>
+                            <div className="relative w-full h-full flex-1 overflow-hidden transition-all duration-300 bg-white">
                                 {isGenerating ? (
                                     <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[2px] flex items-center justify-center" />
                                 ) : null}
-                                <div className={cn(
-                                    "relative h-full transition-all duration-300 shadow-xl overflow-hidden bg-white",
-                                    deviceMode === 'pc' ? "w-full shadow-none" : "rounded-3xl border border-slate-200/60 ring-1 ring-slate-900/5",
-                                    deviceMode === 'mobile' ? "w-[390px]" : "",
-                                    deviceMode === 'pad' ? "w-[800px]" : ""
-                                )}>
+                                <div className="relative w-full h-full overflow-hidden bg-white">
                                     <iframe
                                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                                         srcDoc={currentSession.generatedHtml || currentSession.streamingCode}
@@ -1301,7 +1297,13 @@ export function ChatPage() {
 
                                     <div className="relative" ref={versionMenuRef}>
                                         <button
-                                            onClick={() => setShowVersionMenu(v => !v)}
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                setShowVersionMenu(v => !v); 
+                                                setShowSharePanel(false);
+                                                setShowPublishModal(false);
+                                                setShowDeviceMenu(false);
+                                            }}
                                             className="flex items-center gap-1 px-2.5 h-7 text-[12px] font-medium text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors border border-slate-100 ml-2 whitespace-nowrap shrink-0 shadow-sm"
                                         >
                                             <span>{activeVersion}</span>
@@ -1348,7 +1350,13 @@ export function ChatPage() {
                                                 "h-8 px-4 text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 font-bold text-[12px] rounded-lg transition-all active:scale-95 flex items-center gap-1.5 whitespace-nowrap",
                                                 showSharePanel && "bg-slate-200 border-slate-300"
                                             )}
-                                            onClick={() => { setShowSharePanel(v => !v); setShowPublishModal(false); }}
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                setShowSharePanel(v => !v); 
+                                                setShowPublishModal(false); 
+                                                setShowDeviceMenu(false);
+                                                setShowVersionMenu(false);
+                                            }}
                                         >
                                             <Share size={13} strokeWidth={2.5} className="text-slate-600" /> 分享
                                         </Button>
@@ -1358,7 +1366,13 @@ export function ChatPage() {
                                     {/* 发布按钮 */}
                                     <div className="relative shrink-0" ref={publishPanelRef}>
                                         <Button
-                                            onClick={() => { setShowPublishModal(v => !v); setShowSharePanel(false); }}
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                setShowPublishModal(v => !v); 
+                                                setShowSharePanel(false); 
+                                                setShowDeviceMenu(false);
+                                                setShowVersionMenu(false);
+                                            }}
                                             className="bg-black hover:bg-slate-800 text-white rounded-lg h-8 px-5 text-[12px] font-black shadow-md shadow-black/10 transition active:scale-95 border border-white/5 whitespace-nowrap"
                                         >
                                             发布
@@ -1505,15 +1519,15 @@ export function ChatPage() {
                                                                 {showDeviceMenu && (
                                                                     <div className="absolute top-full left-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 w-[120px] animate-in fade-in slide-in-from-top-1 duration-150">
                                                                         <button
-                                                                            onClick={() => { setDeviceMode('mobile'); setShowDeviceMenu(false); }}
+                                                                            onClick={() => { setDeviceMode('pc'); setShowDeviceMenu(false); }}
                                                                             className={cn(
                                                                                 "w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition hover:bg-slate-50",
-                                                                                deviceMode === 'mobile' ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
+                                                                                deviceMode === 'pc' ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
                                                                             )}
                                                                         >
-                                                                            <Smartphone size={13} />
-                                                                            移动端
-                                                                            {deviceMode === 'mobile' && <Check size={11} className="ml-auto text-indigo-500" />}
+                                                                            <Monitor size={13} />
+                                                                            PC 端
+                                                                            {deviceMode === 'pc' && <Check size={11} className="ml-auto text-indigo-500" />}
                                                                         </button>
                                                                         <button
                                                                             onClick={() => { setDeviceMode('pad'); setShowDeviceMenu(false); }}
@@ -1527,15 +1541,15 @@ export function ChatPage() {
                                                                             {deviceMode === 'pad' && <Check size={11} className="ml-auto text-indigo-500" />}
                                                                         </button>
                                                                         <button
-                                                                            onClick={() => { setDeviceMode('pc'); setShowDeviceMenu(false); }}
+                                                                            onClick={() => { setDeviceMode('mobile'); setShowDeviceMenu(false); }}
                                                                             className={cn(
                                                                                 "w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition hover:bg-slate-50",
-                                                                                deviceMode === 'pc' ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
+                                                                                deviceMode === 'mobile' ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
                                                                             )}
                                                                         >
-                                                                            <Monitor size={13} />
-                                                                            PC 端
-                                                                            {deviceMode === 'pc' && <Check size={11} className="ml-auto text-indigo-500" />}
+                                                                            <Smartphone size={13} />
+                                                                            移动端
+                                                                            {deviceMode === 'mobile' && <Check size={11} className="ml-auto text-indigo-500" />}
                                                                         </button>
                                                                     </div>
                                                                 )}
