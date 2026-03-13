@@ -326,8 +326,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
-    const RAW_URL = '/prd/content.md';
-    const IMG_BASE = '/prd%20%26%20design/';
+    var isLocalFile = window.location.protocol === 'file:';
+    var RAW_URL = isLocalFile ? 'content.md' : '/prd/content.md';
+    var IMG_BASE = isLocalFile ? '../assets/images/' : '/assets/images/';
+
+    if (isLocalFile) {
+      var backBtn = document.querySelector('.back-btn');
+      if (backBtn) backBtn.setAttribute('href', '../index.html');
+    }
 
     marked.setOptions({
       highlight: function(code, lang) {
@@ -346,9 +352,10 @@
         if (!res.ok) throw new Error('Failed to load');
         let text = await res.text();
 
-        // Fix relative image paths → absolute Vercel-served paths
+        // Fix relative image paths: local file → ../assets/images/xxx, Vercel → /assets/images/xxx
         text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, (match, alt, src) => {
-          return `![${alt}](${IMG_BASE}${encodeURIComponent(src)})`;
+          var filename = src.replace(/^\.\.\/assets\/images\//, '').replace(/^assets\/images\//, '').split('/').pop();
+          return '![' + alt + '](' + IMG_BASE + (isLocalFile ? filename : encodeURIComponent(filename)) + ')';
         });
 
         document.getElementById('md-body').innerHTML = marked.parse(text);
