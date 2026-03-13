@@ -36,7 +36,7 @@ export function ChatPage() {
     const [inputMessage, setInputMessage] = useState('');
     const [publishSuccess, setPublishSuccess] = useState(false);
     const [activeFile, setActiveFile] = useState('cart.html');
-    const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('mobile');
+    const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('pc');
     const [showDeviceMenu, setShowDeviceMenu] = useState(false);
     const deviceMenuRef = useRef<HTMLDivElement>(null);
     const [showVersionMenu, setShowVersionMenu] = useState(false);
@@ -708,16 +708,27 @@ export function ChatPage() {
                                 </div>
                             </div>
                             {/* Iframe content */}
-                            <div className="relative w-full h-full flex-1 overflow-hidden">
+                            <div className={cn(
+                                "relative w-full h-full flex-1 overflow-hidden transition-all duration-300",
+                                // 设备切换：如果是移动端或 Pad 端，背景加深色，居中显示定宽的 iframe 容器
+                                deviceMode !== 'pc' ? "bg-slate-100/80 flex items-center justify-center p-4" : ""
+                            )}>
                                 {isGenerating ? (
                                     <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[2px] flex items-center justify-center" />
                                 ) : null}
-                                <iframe
-                                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                                    srcDoc={currentSession.generatedHtml || currentSession.streamingCode}
-                                    title="AI Generated Preview"
-                                    className="w-full h-full border-none bg-white"
-                                />
+                                <div className={cn(
+                                    "relative h-full transition-all duration-300 shadow-xl overflow-hidden bg-white",
+                                    deviceMode === 'pc' ? "w-full shadow-none" : "rounded-3xl border border-slate-200/60 ring-1 ring-slate-900/5",
+                                    deviceMode === 'mobile' ? "w-[390px]" : "",
+                                    deviceMode === 'pad' ? "w-[800px]" : ""
+                                )}>
+                                    <iframe
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                        srcDoc={currentSession.generatedHtml || currentSession.streamingCode}
+                                        title="AI Generated Preview"
+                                        className="w-full h-full border-none bg-white"
+                                    />
+                                </div>
                                 {isGenerating && (
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-indigo-600 text-white px-4 py-2 text-[12px] font-bold rounded-full shadow-lg flex items-center gap-2">
                                         <RefreshCw size={12} className="animate-spin" />
