@@ -469,8 +469,8 @@ export function ChatPage() {
             {/* Form fields */}
             <div className="px-6 py-5 space-y-5">
                 {/* Page name */}
-                <div className="flex items-center gap-5">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">项目名称</span>
+                <div className="flex items-center gap-4">
+                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">项目名称</span>
                     <input
                         value={projectName}
                         onChange={e => setProjectName(e.target.value)}
@@ -479,8 +479,8 @@ export function ChatPage() {
                 </div>
 
                 {/* Status */}
-                <div className="flex items-center gap-5">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">当前状态</span>
+                <div className="flex items-center gap-4">
+                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">当前状态</span>
                     {isPublished ? (
                         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[12px] font-semibold border border-emerald-100">
                             <CheckCircle2 size={13} strokeWidth={2.5} />
@@ -495,8 +495,8 @@ export function ChatPage() {
 
                 {/* Last published - only when published */}
                 {isPublished && publishedAt && (
-                    <div className="flex items-center gap-5">
-                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">最近发布</span>
+                    <div className="flex items-center gap-4">
+                        <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">最近发布</span>
                         <span className="text-[13px] font-medium text-gray-700">
                             {formatPublishedAt(publishedAt)} · V{publishVersion}
                         </span>
@@ -504,61 +504,77 @@ export function ChatPage() {
                 )}
 
                 {/* URL */}
-                <div className="flex items-center gap-5">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">访问链接</span>
-                    <div className="flex-1 flex items-center gap-2">
-                        <div className={cn("flex-1 flex items-center border rounded-lg px-3 py-2 transition", isEditingUrl ? "border-indigo-300 ring-2 ring-indigo-100 bg-white" : "border-gray-50 bg-gray-50")}>
+                <div className="flex items-start gap-4">
+                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0 mt-2.5">访问链接</span>
+                    <div className="flex-1 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                            <div className={cn("flex-1 flex items-center border rounded-lg px-3 py-2 transition", isEditingUrl ? "border-indigo-300 ring-2 ring-indigo-100 bg-white" : "border-gray-50 bg-gray-50")}>
+                                {isEditingUrl ? (
+                                    <input
+                                        autoFocus
+                                        value={editUrlValue}
+                                        onChange={e => { setEditUrlValue(e.target.value); setUrlError(''); }}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用');
+                                                else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); }
+                                            }
+                                            if (e.key === 'Escape') setIsEditingUrl(false);
+                                        }}
+                                        className="flex-1 bg-transparent text-[13px] font-medium text-gray-800 outline-none w-full"
+                                    />
+                                ) : (
+                                    <span 
+                                        className="flex-1 text-[13px] font-medium text-gray-800 truncate cursor-pointer hover:text-indigo-600 transition-colors" 
+                                        title="点击复制链接"
+                                        onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
+                                    >
+                                        {customUrl}
+                                    </span>
+                                )}
+                                <span className="text-[13px] font-medium text-gray-400 ml-1 shrink-0">.modao.site</span>
+                            </div>
+                            
+                            {/* Actions toggle depending on editing state */}
                             {isEditingUrl ? (
-                                <input
-                                    autoFocus
-                                    value={editUrlValue}
-                                    onChange={e => { setEditUrlValue(e.target.value); setUrlError(''); }}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用');
-                                            else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); }
-                                        }
-                                        if (e.key === 'Escape') setIsEditingUrl(false);
-                                    }}
-                                    className="flex-1 bg-transparent text-[13px] font-medium text-gray-800 outline-none w-full"
-                                />
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                    <button 
+                                        title="保存"
+                                        onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} 
+                                        className="px-3 py-2 bg-indigo-50 text-indigo-600 font-bold text-[13px] rounded-lg hover:bg-indigo-100 transition"
+                                    >
+                                        保存
+                                    </button>
+                                    <button 
+                                        title="取消"
+                                        onClick={() => setIsEditingUrl(false)} 
+                                        className="px-3 py-2 bg-gray-100 text-gray-500 font-bold text-[13px] rounded-lg hover:bg-gray-200 transition"
+                                    >
+                                        取消
+                                    </button>
+                                </div>
                             ) : (
-                                <span 
-                                    className="flex-1 text-[13px] font-medium text-gray-800 truncate cursor-pointer hover:text-indigo-600 transition-colors" 
-                                    title="点击复制链接"
-                                    onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
-                                >
-                                    {customUrl}
-                                </span>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                    <button
+                                        title="复制链接"
+                                        onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
+                                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                                    >
+                                        {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
+                                    </button>
+                                    <button
+                                        title="编辑域名前缀"
+                                        onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }}
+                                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                                    >
+                                        <Edit3 size={16} />
+                                    </button>
+                                </div>
                             )}
-                            <span className="text-[13px] font-medium text-gray-400 ml-1 shrink-0">.modao.site</span>
                         </div>
-                        {/* URL action icons */}
-                        <div className="flex items-center gap-0.5">
-                            <button
-                                title="复制链接"
-                                onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
-                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                            >
-                                {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
-                            </button>
-                            <button
-                                title="编辑域名前缀"
-                                onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }}
-                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                            >
-                                <Edit3 size={16} />
-                            </button>
-                        </div>
+                        {urlError && <div className="text-[12px] text-red-500 font-medium">{urlError}</div>}
                     </div>
                 </div>
-                {isEditingUrl && (
-                    <div className="flex gap-2 pl-[110px]">
-                        <button onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} className="px-3 py-1 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-md hover:bg-indigo-100 transition">保存</button>
-                        <button onClick={() => setIsEditingUrl(false)} className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-xs rounded-md hover:bg-gray-200 transition">取消</button>
-                    </div>
-                )}
-                {urlError && <div className="text-[12px] text-red-500 font-medium pl-[110px]">{urlError}</div>}
             </div>
 
             {/* Footer buttons */}
