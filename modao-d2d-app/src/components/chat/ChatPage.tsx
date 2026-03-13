@@ -96,6 +96,7 @@ export function ChatPage() {
         id: number; startMX: number; startMY: number; origW: number; origH: number;
     } | null>(null);
     const [hoveredBadge, setHoveredBadge] = useState<number | null>(null);
+    const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
 
     const EXISTING_URLS = ['cart-app-123456', 'design-review-11718025', 'table-blue-58751561', 'pig-rock-11718025'];
 
@@ -251,6 +252,11 @@ export function ChatPage() {
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        // 点击空白处时，收起已打开的评论
+        if (!(e.target as HTMLElement).closest('.comment-box-interactive')) {
+            setActiveCommentId(null);
+        }
+
         if ((e.target as HTMLElement).closest('.comment-box-interactive')) return;
         // 检查是否有正在编辑的评论框
         const editingComment = comments.find(c => c.isEditing && !c.confirmed);
@@ -1677,7 +1683,9 @@ export function ChatPage() {
                                 {/* 已有标注框 */}
                                 {comments.map((comment, index) => {
                                     if (comment.confirmed) {
-                                        // 已确认态：仅显示数字徽章，hover 时展开选框+文本+删除按钮
+                                        const isActive = activeCommentId === comment.id;
+                                        const isHovered = hoveredBadge === comment.id;
+                                        // 已确认态：仅显示数字徽章，hover 时显示选框，点击时常显选框和弹出内容
                                         return (
                                             <div
                                                 key={comment.id}
@@ -1689,28 +1697,38 @@ export function ChatPage() {
                                                     className="absolute -top-3 -left-3 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md z-50 cursor-pointer"
                                                     onMouseEnter={() => setHoveredBadge(comment.id)}
                                                     onMouseLeave={() => setHoveredBadge(null)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveCommentId(isActive ? null : comment.id);
+                                                    }}
                                                 >
                                                     {index + 1}
                                                 </div>
-                                                {/* hover 时展开选框和弹出内容 */}
-                                                {hoveredBadge === comment.id && (
-                                                    <>
-                                                        <div className="absolute inset-0 border-2 border-indigo-400 rounded pointer-events-none" />
-                                                        <div
-                                                            className={cn("absolute left-0 bg-white rounded-xl shadow-xl p-3 border border-indigo-100 z-50 min-w-[12rem] max-w-xs", comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2")}
-                                                            onMouseEnter={() => setHoveredBadge(comment.id)}
-                                                            onMouseLeave={() => setHoveredBadge(null)}
-                                                            onMouseDown={e => e.stopPropagation()}
+                                                
+                                                {/* hover 或 active 时显示选框 */}
+                                                {(isHovered || isActive) && (
+                                                    <div className="absolute inset-0 border-2 border-indigo-400 rounded pointer-events-none" />
+                                                )}
+
+                                                {/* active 时显示弹出内容 */}
+                                                {isActive && (
+                                                    <div
+                                                        className={cn("absolute left-0 bg-white rounded-xl shadow-xl p-3 border border-indigo-100 z-50 min-w-[12rem] max-w-xs", comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2")}
+                                                        onMouseDown={e => e.stopPropagation()}
+                                                    >
+                                                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-2">{comment.text}</p>
+                                                        <button
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setComments(prev => prev.filter(c => c.id !== comment.id)); 
+                                                                setActiveCommentId(null); 
+                                                                setHoveredBadge(null); 
+                                                            }}
+                                                            className="text-[11px] font-bold text-red-500 hover:text-red-700 transition flex items-center gap-1"
                                                         >
-                                                            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-2">{comment.text}</p>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); setComments(prev => prev.filter(c => c.id !== comment.id)); setHoveredBadge(null); }}
-                                                                className="text-[11px] font-bold text-red-500 hover:text-red-700 transition flex items-center gap-1"
-                                                            >
-                                                                <X size={11} strokeWidth={3} /> 删除
-                                                            </button>
-                                                        </div>
-                                                    </>
+                                                            <X size={11} strokeWidth={3} /> 删除
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         );
