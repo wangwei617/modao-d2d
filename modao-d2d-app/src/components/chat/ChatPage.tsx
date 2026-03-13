@@ -35,6 +35,7 @@ export function ChatPage() {
     const [activeTerminalFile, setActiveTerminalFile] = useState('墨刀AI界面设计评审.md');
     const [inputMessage, setInputMessage] = useState('');
     const [publishSuccess, setPublishSuccess] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
     const [activeFile, setActiveFile] = useState('cart.html');
     const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('pc');
     const [showDeviceMenu, setShowDeviceMenu] = useState(false);
@@ -459,7 +460,7 @@ export function ChatPage() {
         <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 w-[420px] z-50 cursor-default animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="text-[15px] font-bold text-gray-900">Publish website</div>
+                <div className="text-[15px] font-bold text-gray-900">发布网站</div>
                 <button onClick={() => setShowPublishModal(false)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
                     <X size={15} />
                 </button>
@@ -469,7 +470,7 @@ export function ChatPage() {
             <div className="px-6 py-5 space-y-5">
                 {/* Page name */}
                 <div className="flex items-center gap-5">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">Page name</span>
+                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">项目名称</span>
                     <input
                         value={projectName}
                         onChange={e => setProjectName(e.target.value)}
@@ -480,10 +481,10 @@ export function ChatPage() {
                 {/* Status - only when published */}
                 {isPublished && (
                     <div className="flex items-center gap-5">
-                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">Status</span>
+                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">当前状态</span>
                         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[12px] font-semibold border border-emerald-100">
                             <CheckCircle2 size={13} strokeWidth={2.5} />
-                            Published
+                            已发布
                         </div>
                     </div>
                 )}
@@ -491,7 +492,7 @@ export function ChatPage() {
                 {/* Last published - only when published */}
                 {isPublished && publishedAt && (
                     <div className="flex items-center gap-5">
-                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">Last published</span>
+                        <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">最近发布</span>
                         <span className="text-[13px] font-medium text-gray-700">
                             {formatPublishedAt(publishedAt)} · V{publishVersion}
                         </span>
@@ -500,7 +501,7 @@ export function ChatPage() {
 
                 {/* URL */}
                 <div className="flex items-center gap-5">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">URL</span>
+                    <span className="text-[13px] font-semibold text-gray-500 w-[90px] shrink-0">访问链接</span>
                     <div className="flex-1 flex items-center gap-2">
                         <div className={cn("flex-1 flex items-center border rounded-lg px-3 py-2 transition", isEditingUrl ? "border-indigo-300 ring-2 ring-indigo-100 bg-white" : "border-gray-50 bg-gray-50")}>
                             {isEditingUrl ? (
@@ -510,7 +511,7 @@ export function ChatPage() {
                                     onChange={e => { setEditUrlValue(e.target.value); setUrlError(''); }}
                                     onKeyDown={e => {
                                         if (e.key === 'Enter') {
-                                            if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('This URL is already taken');
+                                            if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用');
                                             else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); }
                                         }
                                         if (e.key === 'Escape') setIsEditingUrl(false);
@@ -520,19 +521,19 @@ export function ChatPage() {
                             ) : (
                                 <span className="flex-1 text-[13px] font-medium text-gray-800 truncate">{customUrl}</span>
                             )}
-                            <span className="text-[13px] font-medium text-gray-400 ml-1 shrink-0">.paico.site</span>
+                            <span className="text-[13px] font-medium text-gray-400 ml-1 shrink-0">.modao.site</span>
                         </div>
                         {/* URL action icons */}
                         <div className="flex items-center gap-0.5">
                             <button
-                                title="Copy URL"
+                                title="复制链接"
                                 onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
                                 className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
                             >
                                 {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
                             </button>
                             <button
-                                title="Randomize URL"
+                                title="随机生成前缀"
                                 onClick={() => {
                                     const rand = Math.random().toString(36).slice(2, 10);
                                     setCustomUrl(rand);
@@ -545,7 +546,7 @@ export function ChatPage() {
                                 </svg>
                             </button>
                             <button
-                                title="Edit URL"
+                                title="修改域名前缀"
                                 onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }}
                                 className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
                             >
@@ -556,8 +557,8 @@ export function ChatPage() {
                 </div>
                 {isEditingUrl && (
                     <div className="flex gap-2 pl-[110px]">
-                        <button onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('This URL is already taken'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} className="px-3 py-1 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-md hover:bg-indigo-100 transition">Save</button>
-                        <button onClick={() => setIsEditingUrl(false)} className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-xs rounded-md hover:bg-gray-200 transition">Cancel</button>
+                        <button onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} className="px-3 py-1 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-md hover:bg-indigo-100 transition">保存</button>
+                        <button onClick={() => setIsEditingUrl(false)} className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-xs rounded-md hover:bg-gray-200 transition">取消</button>
                     </div>
                 )}
                 {urlError && <div className="text-[12px] text-red-500 font-medium pl-[110px]">{urlError}</div>}
@@ -571,20 +572,24 @@ export function ChatPage() {
                             onClick={() => { setIsPublished(false); setPublishVersion(0); setPublishedAt(null); setPublishedProjectName(''); setShowPublishModal(false); }}
                             className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white"
                         >
-                            Unpublish
+                            撤回
                         </button>
                         <button
-                            disabled={!hasPublishChanges}
+                            disabled={!hasPublishChanges || isPublishing}
                             onClick={() => {
-                                if (!hasPublishChanges) return;
-                                setPublishSuccess(true);
+                                if (!hasPublishChanges || isPublishing) return;
+                                setIsPublishing(true);
                                 setTimeout(() => {
-                                    setPublishSuccess(false);
-                                    setPublishedProjectName(projectName);
-                                    setPublishVersion(v => v + 1);
-                                    setPublishedAt(new Date());
-                                    setShowPublishModal(false);
-                                }, 1500);
+                                    setIsPublishing(false);
+                                    setPublishSuccess(true);
+                                    setTimeout(() => {
+                                        setPublishSuccess(false);
+                                        setPublishedProjectName(projectName);
+                                        setPublishVersion(v => v + 1);
+                                        setPublishedAt(new Date());
+                                        setShowPublishModal(false);
+                                    }, 1500);
+                                }, 1000);
                             }}
                             className={cn(
                                 "flex-1 h-[42px] rounded-[10px] font-semibold text-[14px] overflow-hidden relative transition",
@@ -593,34 +598,49 @@ export function ChatPage() {
                                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                             )}
                         >
-                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
-                                Update
+                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isPublishing || publishSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                                更新
+                            </div>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !publishSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
+                                <RefreshCw size={14} className="animate-spin" /> 正在发布...
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
-                                <Check size={16} strokeWidth={3} /> Updated
+                                <Check size={16} strokeWidth={3} /> 更新成功
                             </div>
                         </button>
                     </>
                 ) : (
                     <button
+                        disabled={isPublishing}
                         onClick={() => {
-                            setPublishSuccess(true);
+                            if (isPublishing) return;
+                            setIsPublishing(true);
                             setTimeout(() => {
-                                setPublishSuccess(false);
-                                setIsPublished(true);
-                                setPublishedProjectName(projectName);
-                                setPublishVersion(1);
-                                setPublishedAt(new Date());
-                                setShowPublishModal(false);
-                            }, 1500);
+                                setIsPublishing(false);
+                                setPublishSuccess(true);
+                                setTimeout(() => {
+                                    setPublishSuccess(false);
+                                    setIsPublished(true);
+                                    setPublishedProjectName(projectName);
+                                    setPublishVersion(1);
+                                    setPublishedAt(new Date());
+                                    setShowPublishModal(false);
+                                }, 1500);
+                            }, 1000);
                         }}
-                        className="w-full h-[42px] rounded-[10px] bg-[#1A1A1A] text-white font-semibold text-[14px] hover:bg-black transition overflow-hidden relative"
+                        className={cn(
+                            "w-full h-[42px] rounded-[10px] text-white font-semibold text-[14px] transition overflow-hidden relative",
+                            isPublishing ? "bg-gray-800" : "bg-[#1A1A1A] hover:bg-black"
+                        )}
                     >
-                        <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
-                            Publish
+                        <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isPublishing || publishSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                            发布
+                        </div>
+                        <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !publishSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
+                            <RefreshCw size={14} className="animate-spin" /> 正在发布...
                         </div>
                         <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
-                            <Check size={16} strokeWidth={3} /> Published
+                            <Check size={16} strokeWidth={3} /> 发布成功
                         </div>
                     </button>
                 )}
