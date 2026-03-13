@@ -9,7 +9,6 @@ mkdir -p vercel-dist
 cp index.html vercel-dist/
 cp -r assets vercel-dist/ || true
 cp -r prd vercel-dist/ || true
-cp -r "prd & design" vercel-dist/ || true
 
 # 编译子项目
 cd modao-d2d-app
