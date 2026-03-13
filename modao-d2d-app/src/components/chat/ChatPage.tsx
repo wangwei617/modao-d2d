@@ -1705,9 +1705,18 @@ export function ChatPage() {
                                                     {index + 1}
                                                 </div>
                                                 
-                                                {/* hover 或 active 时显示选框 */}
+                                                {/* hover 或 active 时显示选框与拖拽抓手 */}
                                                 {(isHovered || isActive) && (
-                                                    <div className="absolute inset-0 border-2 border-indigo-400 rounded pointer-events-none" />
+                                                    <div
+                                                        className="absolute inset-0 border-2 border-indigo-400 rounded cursor-grab active:cursor-grabbing z-40"
+                                                        onMouseDown={e => {
+                                                            e.stopPropagation();
+                                                            const canvasRect = (e.currentTarget.closest('[data-canvas]') as HTMLElement)?.getBoundingClientRect();
+                                                            if (!canvasRect) return;
+                                                            setDraggingComment({ id: comment.id, startMX: e.clientX - canvasRect.left, startMY: e.clientY - canvasRect.top, origX: comment.rect.x, origY: comment.rect.y });
+                                                            setActiveCommentId(comment.id);
+                                                        }}
+                                                    />
                                                 )}
 
                                                 {/* active 时显示弹出内容 */}
