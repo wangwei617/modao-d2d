@@ -352,9 +352,11 @@
         if (!res.ok) throw new Error('Failed to load');
         let text = await res.text();
 
-        // Fix relative image paths: local file → ../assets/images/xxx, Vercel → /assets/images/xxx
+        // Fix relative image paths
         text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, (match, alt, src) => {
-          var filename = src.replace(/^\.\.\/assets\/images\//, '').replace(/^assets\/images\//, '').split('/').pop();
+          // If the src is just "image-3.png", it will extract "image-3.png"
+          // We will map it to IMG_BASE + "image-3.png" (e.g. /assets/images/image-3.png)
+          var filename = src.split('/').pop();
           return '![' + alt + '](' + IMG_BASE + (isLocalFile ? filename : encodeURIComponent(filename)) + ')';
         });
 
