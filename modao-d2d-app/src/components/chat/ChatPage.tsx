@@ -1636,7 +1636,7 @@ export function ChatPage() {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
                                 </div>
                                 <span className="text-white text-sm font-semibold">截图优化</span>
-                                <span className="text-white text-xs bg-indigo-500/20 text-indigo-200 px-2.5 py-1 rounded-md border border-indigo-500/30">请框选要调整的内容并增加评论</span>
+                                <span className="text-white text-xs bg-indigo-500/20 text-indigo-200 px-2.5 py-1 rounded-md border border-indigo-500/30">请框选要调整的区域并告诉AI如何修改</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
@@ -1798,7 +1798,7 @@ export function ChatPage() {
                                                     onChange={e => setComments(prev => prev.map(c => c.id === comment.id ? { ...c, text: e.target.value } : c))}
                                                     className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
                                                     rows={2}
-                                                    placeholder="输入评论..."
+                                                    placeholder="请告诉AI如何修改"
                                                     onKeyDown={e => {
                                                         if (e.key === 'Enter' && !e.shiftKey) {
                                                             e.preventDefault();
