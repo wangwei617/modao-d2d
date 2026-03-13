@@ -86,7 +86,7 @@ ${extraContext ? `【用户已补充的详细上下文】\n${extraContext}` : ''
 2. 包含内联的 CSS (使用 Tailwind CDN，或者编写内联 style) 和必要的交互脚本 (使用纯 JS 即可)。
 3. 界面必须现代、极简、美观（参考 Apple, Stripe 的设计）。
 4. 必须有良好的响应式支持。
-5. 必须只生成页面主体内容，绝对不要生成顶部包含红黄绿三个圆点以及地址栏的“模拟浏览器外壳”或“窗口标题栏”！因为我们外部已经提供了一个浏览器外壳，你生成的界面内部再带外壳会造成严重的视觉冲突。
+5. 必须只生成纯净的页面核心内容，**严禁生成任何形式的“浏览器外观容器”、“MacOS 窗口按钮（红黄绿圆点）”、“地址栏”、“窗口标题栏”或外层装饰性卡片**。因为生成的代码会被嵌入到一个已经带有浏览器外壳的 iframe 中，如果在代码内再次生成外壳，会导致“画蛇添足”的嵌套界面。请直接从页面业务的主体布局（如主导航、内容区）开始编写！
 6. 只输出最终代码片段代码本身，请不要用 \`\`\`html 和 \`\`\` 包裹你的回答，也不要写开场白或结尾。直接以 <html> 开始。`;
 
         const responseStream = await ai.models.generateContentStream({
@@ -94,7 +94,7 @@ ${extraContext ? `【用户已补充的详细上下文】\n${extraContext}` : ''
             contents: fullPrompt,
             config: {
                 temperature: 0.2,
-                systemInstruction: "You are an expert frontend developer focusing on creating beautiful, HTML/JS/CSS applications. Please reply ONLY with the html code.",
+                systemInstruction: "You are an expert frontend developer. CRITICAL: You MUST ONLY output the application's actual UI content. NEVER wrap your UI inside a fake macOS window, browser chrome, address bar, or traffic light buttons. Only return the raw HTML of the app content itself without any outer mock window. Do not use ```html codeblocks.",
             }
         });
 
