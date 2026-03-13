@@ -1789,15 +1789,30 @@ export function ChatPage() {
 
                                             {/* 输入面板 */}
                                             <div
-                                                className={cn("absolute left-0 bg-white rounded-xl shadow-xl w-64 p-3 border border-indigo-100 z-50", comment.rect.y > 300 ? "bottom-full mb-3" : "top-full mt-2", comment.rect.x > 800 && "-left-40")}
+                                                className={cn(
+                                                    "absolute bg-white rounded-xl shadow-xl w-[280px] p-3 border border-indigo-100 z-50", 
+                                                    // 垂直方向：如果靠下，则向上弹；否则向下弹
+                                                    comment.rect.y > window.innerHeight - 250 ? "bottom-full mb-3" : "top-full mt-2", 
+                                                    // 水平方向：如果靠右，则向左对齐选框右边缘；否则对齐选框左边缘
+                                                    comment.rect.x > window.innerWidth - 300 ? "right-0" : "left-0"
+                                                )}
                                                 onMouseDown={e => e.stopPropagation()}
                                             >
                                                 <textarea
                                                     autoFocus
                                                     value={comment.text}
-                                                    onChange={e => setComments(prev => prev.map(c => c.id === comment.id ? { ...c, text: e.target.value } : c))}
-                                                    className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-                                                    rows={2}
+                                                    onChange={e => {
+                                                        const target = e.target;
+                                                        target.style.height = 'auto'; // Reset height to recalculate
+                                                        const scrollHeight = target.scrollHeight;
+                                                        // 假设每行大约 20px（基础高度加上 padding 等）
+                                                        // 默认两行，最大五行
+                                                        const newHeight = Math.min(Math.max(scrollHeight, 40), 100); 
+                                                        target.style.height = `${newHeight}px`;
+                                                        setComments(prev => prev.map(c => c.id === comment.id ? { ...c, text: target.value } : c));
+                                                    }}
+                                                    className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none min-h-[52px]"
+                                                    style={{ height: '52px', overflowY: 'auto' }}
                                                     placeholder="请告诉AI如何修改"
                                                     onKeyDown={e => {
                                                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1808,10 +1823,10 @@ export function ChatPage() {
                                                         }
                                                     }}
                                                 />
-                                                <div className="flex justify-between items-center mt-2">
+                                                <div className="flex justify-end items-center mt-2.5 gap-3">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setComments(prev => prev.filter(c => c.id !== comment.id)); }}
-                                                        className="text-[12px] font-bold text-slate-400 hover:text-slate-600 transition"
+                                                        className="text-[12px] font-bold text-slate-400 hover:text-slate-600 transition px-2"
                                                     >
                                                         取消
                                                     </button>
@@ -1824,7 +1839,7 @@ export function ChatPage() {
                                                                 setComments(prev => prev.filter(c => c.id !== comment.id));
                                                             }
                                                         }}
-                                                        className="px-3 py-1.5 bg-indigo-500 text-white text-[12px] font-bold rounded-lg hover:bg-indigo-600 transition active:scale-95 shadow-sm"
+                                                        className="px-4 py-1.5 bg-indigo-500 text-white text-[12px] font-bold rounded-lg hover:bg-indigo-600 transition active:scale-95 shadow-sm"
                                                     >
                                                         确定
                                                     </button>
