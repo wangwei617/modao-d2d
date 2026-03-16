@@ -39,6 +39,12 @@ export function ChatPage() {
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
     const [activeFile, setActiveFile] = useState('cart.html');
     const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('pc');
     const [showDeviceMenu, setShowDeviceMenu] = useState(false);
@@ -653,19 +659,20 @@ export function ChatPage() {
                         disabled={isPublishing}
                         onClick={() => {
                             if (isPublishing) return;
+                            // Step 1: loading
                             setIsPublishing(true);
                             setTimeout(() => {
+                                // Step 2: show "发布成功" + set published state immediately + toast
                                 setIsPublishing(false);
                                 setPublishSuccess(true);
+                                setIsPublished(true);
+                                setPublishedProjectName(projectName);
+                                setPublishVersion(1);
+                                setPublishedAt(new Date());
+                                showToast('✅ 发布成功！网站已上线');
+                                // Step 3: after 1s, hide "发布成功" → panel shows "撤回/更新" buttons, panel stays open
                                 setTimeout(() => {
                                     setPublishSuccess(false);
-                                    setIsPublished(true);
-                                    setPublishedProjectName(projectName);
-                                    setPublishVersion(1);
-                                    setPublishedAt(new Date());
-                                    setTimeout(() => {
-                                        setShowPublishModal(false);
-                                    }, 500);
                                 }, 1000);
                             }, 1000);
                         }}
@@ -1961,6 +1968,16 @@ export function ChatPage() {
             })()}
 
             {/* (已通过下拉框替代的全屏发布模态框已移除) */}
+
+            {/* 全局 Toast 通知 */}
+            {toast && (
+                <div className={cn(
+                    "fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-5 py-3 rounded-xl shadow-2xl text-[14px] font-semibold animate-in slide-in-from-bottom-4 fade-in duration-300",
+                    toast.type === 'success' ? "bg-[#1a1a1a] text-white" : "bg-red-600 text-white"
+                )}>
+                    {toast.message}
+                </div>
+            )}
 
             {/* 撤回二次确认弹框 (Ant Design 风格) */}
             {showWithdrawConfirm && (
