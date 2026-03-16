@@ -530,13 +530,11 @@ export function ChatPage() {
                                     <span 
                                         className={cn(
                                             "flex-1 text-[13px] font-medium truncate transition-colors",
-                                            isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 underline underline-offset-2" : "text-gray-800"
+                                            isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-2" : "text-gray-800 cursor-pointer hover:text-indigo-600 hover:underline underline-offset-2"
                                         )}
-                                        title={isPublished ? "点击在新标签页打开" : ""}
+                                        title={isPublished ? "点击在新标签页打开" : "点击在新标签页打开预览"}
                                         onClick={() => {
-                                            if (isPublished) {
-                                                window.open(`https://${customUrl}.modao.site`, '_blank');
-                                            }
+                                            window.open(`https://${customUrl}.modao.site`, '_blank');
                                         }}
                                     >
                                         {customUrl}
