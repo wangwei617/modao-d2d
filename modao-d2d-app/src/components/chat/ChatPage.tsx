@@ -37,7 +37,6 @@ export function ChatPage() {
     const [isPublishing, setIsPublishing] = useState(false);
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
-    const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -502,11 +501,11 @@ export function ChatPage() {
                     )}
                 </div>
 
-                {/* Last published - only when published */}
-                {isPublished && publishedAt && (
+                {/* Last published time - shown whenever there's a publish record, degraded when unpublished */}
+                {publishedAt && (
                     <div className="flex items-center gap-4">
-                        <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">最近发布时间</span>
-                        <span className="text-[13px] font-medium text-gray-700">
+                        <span className={cn("text-[13px] font-semibold w-[60px] shrink-0", isPublished ? "text-gray-500" : "text-gray-400")}>最近发布时间</span>
+                        <span className={cn("text-[13px] font-medium", isPublished ? "text-gray-700" : "text-gray-400")}>
                             {formatPublishedAt(publishedAt)} · V{publishVersion}
                         </span>
                     </div>
@@ -604,14 +603,11 @@ export function ChatPage() {
                             }}
                             className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white relative overflow-hidden"
                         >
-                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isWithdrawing || withdrawSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", isWithdrawing ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
                                 撤回
                             </div>
-                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300 text-gray-500", isWithdrawing && !withdrawSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300 text-gray-500", isWithdrawing ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
                                 <RefreshCw size={14} className="animate-spin" /> 正在撤回...
-                            </div>
-                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", withdrawSuccess ? "translate-y-0 opacity-100 text-emerald-600" : "translate-y-10 opacity-0")}>
-                                <Check size={16} strokeWidth={3} /> 撤回成功
                             </div>
                         </button>
                         <button
@@ -1984,20 +1980,15 @@ export function ChatPage() {
                                     </button>
                                     <button 
                                         onClick={() => {
+                                            // Step 1: close modal, start loading
                                             setShowWithdrawConfirm(false);
-                                            // Execute withdrawal logic
                                             setIsWithdrawing(true);
                                             setTimeout(() => {
+                                                // Step 2: withdrawal success → flip to unpublished, keep time record, show toast
                                                 setIsWithdrawing(false);
-                                                setWithdrawSuccess(true);
+                                                setIsPublished(false);
+                                                // publishedAt and publishVersion are intentionally kept for historical display
                                                 showToast('撤回成功');
-                                                setTimeout(() => {
-                                                    setIsPublished(false);
-                                                    setPublishVersion(0);
-                                                    setPublishedAt(null);
-                                                    setPublishedProjectName('');
-                                                    setWithdrawSuccess(false);
-                                                }, 1000);
                                             }, 1500);
                                         }}
                                         className="px-4 py-[5px] bg-[#1677ff] text-white rounded-md text-[14px] hover:bg-[#4096ff] transition-colors shadow-sm"
