@@ -340,7 +340,7 @@ export function ChatPage() {
             if (sharePanelRef.current && !sharePanelRef.current.contains(e.target as Node)) {
                 setShowSharePanel(false);
             }
-            if (publishPanelRef.current && !publishPanelRef.current.contains(e.target as Node)) {
+            if (publishPanelRef.current && !publishPanelRef.current.contains(e.target as Node) && !showWithdrawConfirm && !isWithdrawing) {
                 setShowPublishModal(false);
             }
             if (deviceMenuRef.current && !deviceMenuRef.current.contains(e.target as Node)) {
@@ -358,7 +358,7 @@ export function ChatPage() {
             setTimeout(() => {
                 if (document.activeElement?.tagName === 'IFRAME') {
                     setShowSharePanel(false);
-                    setShowPublishModal(false);
+                    if (!showWithdrawConfirm && !isWithdrawing) setShowPublishModal(false);
                     setShowDeviceMenu(false);
                     setShowVersionMenu(false);
                 }
@@ -370,8 +370,9 @@ export function ChatPage() {
         return () => {
             document.removeEventListener('mousedown', handler);
             window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('blur', handleBlur);
         };
-    }, []);
+    }, [showWithdrawConfirm, isWithdrawing]);
 
     const shareDropdown = (
         <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 z-50 flex flex-col cursor-default font-sans animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
