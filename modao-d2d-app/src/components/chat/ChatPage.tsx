@@ -82,9 +82,8 @@ export function ChatPage() {
     const [projectName, setProjectName] = useState('电商购物App原型');
     const [customUrl, setCustomUrl] = useState('cart-app-58751561');
     const [publishedProjectName, setPublishedProjectName] = useState('');
-    // Hover state to toggle underline on the link container
-    const [isLinkHovered, setIsLinkHovered] = useState(false);
     const [publishedAt, setPublishedAt] = useState<Date | null>(null);
+    const [publishVersion, setPublishVersion] = useState(0);
 
     // Screenshot mode state
     const [showScreenshotMode, setShowScreenshotMode] = useState(false);
@@ -624,14 +623,12 @@ export function ChatPage() {
                                 setTimeout(() => {
                                     setIsPublishing(false);
                                     setPublishSuccess(true);
+                                    setPublishedProjectName(projectName);
+                                    setPublishVersion(v => v + 1);
+                                    setPublishedAt(new Date());
+                                    showToast('✅ 更新成功！');
                                     setTimeout(() => {
                                         setPublishSuccess(false);
-                                        setPublishedProjectName(projectName);
-                                        setPublishVersion(v => v + 1);
-                                        setPublishedAt(new Date());
-                                        setTimeout(() => {
-                                            setShowPublishModal(false);
-                                        }, 500);
                                     }, 1000);
                                 }, 1000);
                             }}
@@ -2003,6 +2000,7 @@ export function ChatPage() {
                                             setTimeout(() => {
                                                 setIsWithdrawing(false);
                                                 setWithdrawSuccess(true);
+                                                showToast('撤回成功');
                                                 setTimeout(() => {
                                                     setIsPublished(false);
                                                     setPublishVersion(0);
