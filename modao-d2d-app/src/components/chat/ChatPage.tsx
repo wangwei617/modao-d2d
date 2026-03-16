@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smartphone, Tablet, Monitor, Share, Share2, Maximize2, Edit3, FileText, CheckCircle2, Paperclip, ArrowUp, X, Globe, Lock, Settings, BarChart3, Image, RefreshCw, MonitorSmartphone, Code2, Palette } from 'lucide-react';
+import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smartphone, Tablet, Monitor, Share, Share2, Maximize2, Edit3, FileText, CheckCircle2, Paperclip, ArrowUp, X, Globe, Lock, Settings, BarChart3, Image, RefreshCw, MonitorSmartphone, Code2, Palette, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,7 @@ export function ChatPage() {
     const [isPublishing, setIsPublishing] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+    const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
     const [activeFile, setActiveFile] = useState('cart.html');
     const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('pc');
     const [showDeviceMenu, setShowDeviceMenu] = useState(false);
@@ -590,24 +591,11 @@ export function ChatPage() {
                 {isPublished ? (
                     <>
                         <button
+                            key="withdraw-btn"
                             disabled={isWithdrawing}
                             onClick={() => {
                                 if (isWithdrawing) return;
-                                const confirmed = window.confirm('确定要撤回该项目的发布吗？撤回后线上链接将立即失效。');
-                                if (!confirmed) return;
-                                
-                                setIsWithdrawing(true);
-                                setTimeout(() => {
-                                    setIsWithdrawing(false);
-                                    setWithdrawSuccess(true);
-                                    setTimeout(() => {
-                                        setIsPublished(false);
-                                        setPublishVersion(0);
-                                        setPublishedAt(null);
-                                        setPublishedProjectName('');
-                                        setWithdrawSuccess(false);
-                                    }, 1000);
-                                }, 1500);
+                                setShowWithdrawConfirm(true);
                             }}
                             className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white relative overflow-hidden"
                         >
@@ -622,6 +610,7 @@ export function ChatPage() {
                             </div>
                         </button>
                         <button
+                            key="update-btn"
                             disabled={!hasPublishChanges || isPublishing}
                             onClick={() => {
                                 if (!hasPublishChanges || isPublishing) return;
@@ -660,6 +649,7 @@ export function ChatPage() {
                     </>
                 ) : (
                     <button
+                        key="publish-btn"
                         disabled={isPublishing}
                         onClick={() => {
                             if (isPublishing) return;
@@ -1971,6 +1961,50 @@ export function ChatPage() {
             })()}
 
             {/* (已通过下拉框替代的全屏发布模态框已移除) */}
+
+            {/* 撤回二次确认弹框 (Ant Design 风格) */}
+            {showWithdrawConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-lg w-[416px] shadow-2xl p-8 relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex gap-4">
+                            <AlertCircle className="w-[22px] h-[22px] text-[#faad14] shrink-0 mt-0.5" fill="currentColor" color="white" />
+                            <div className="flex-1">
+                                <h3 className="text-base font-semibold text-gray-900 mb-2">确定要撤回该项目的发布吗？</h3>
+                                <p className="text-[14px] text-gray-500 mb-6">撤回后线上链接将立即失效。</p>
+                                <div className="flex justify-end gap-2">
+                                    <button 
+                                        onClick={() => setShowWithdrawConfirm(false)}
+                                        className="px-4 py-[5px] border border-[#d9d9d9] text-gray-700 bg-white rounded-md text-[14px] hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+                                    >
+                                        取消
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setShowWithdrawConfirm(false);
+                                            // Execute withdrawal logic
+                                            setIsWithdrawing(true);
+                                            setTimeout(() => {
+                                                setIsWithdrawing(false);
+                                                setWithdrawSuccess(true);
+                                                setTimeout(() => {
+                                                    setIsPublished(false);
+                                                    setPublishVersion(0);
+                                                    setPublishedAt(null);
+                                                    setPublishedProjectName('');
+                                                    setWithdrawSuccess(false);
+                                                }, 1000);
+                                            }, 1500);
+                                        }}
+                                        className="px-4 py-[5px] bg-[#1677ff] text-white rounded-md text-[14px] hover:bg-[#4096ff] transition-colors shadow-sm"
+                                    >
+                                        确定
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
