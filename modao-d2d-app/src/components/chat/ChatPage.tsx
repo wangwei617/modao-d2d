@@ -34,8 +34,8 @@ export function ChatPage() {
     const [isDirOpen, setIsDirOpen] = useState(true);
     const [activeTerminalFile, setActiveTerminalFile] = useState('墨刀AI界面设计评审.md');
     const [inputMessage, setInputMessage] = useState('');
-    const [publishSuccess, setPublishSuccess] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [updateSuccess, setUpdateSuccess] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
@@ -505,7 +505,7 @@ export function ChatPage() {
                 {/* Last published - only when published */}
                 {isPublished && publishedAt && (
                     <div className="flex items-center gap-4">
-                        <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">最近发布</span>
+                        <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">最近发布时间</span>
                         <span className="text-[13px] font-medium text-gray-700">
                             {formatPublishedAt(publishedAt)} · V{publishVersion}
                         </span>
@@ -622,13 +622,13 @@ export function ChatPage() {
                                 setIsPublishing(true);
                                 setTimeout(() => {
                                     setIsPublishing(false);
-                                    setPublishSuccess(true);
+                                    setUpdateSuccess(true);
                                     setPublishedProjectName(projectName);
                                     setPublishVersion(v => v + 1);
                                     setPublishedAt(new Date());
                                     showToast('✅ 更新成功！');
                                     setTimeout(() => {
-                                        setPublishSuccess(false);
+                                        setUpdateSuccess(false);
                                     }, 1000);
                                 }, 1000);
                             }}
@@ -639,13 +639,13 @@ export function ChatPage() {
                                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                             )}
                         >
-                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isPublishing || publishSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isPublishing || updateSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
                                 更新
                             </div>
-                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !publishSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !updateSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
                                 <RefreshCw size={14} className="animate-spin" /> 正在更新...
                             </div>
-                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", updateSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
                                 <Check size={16} strokeWidth={3} /> 更新成功
                             </div>
                         </button>
@@ -656,21 +656,14 @@ export function ChatPage() {
                         disabled={isPublishing}
                         onClick={() => {
                             if (isPublishing) return;
-                            // Step 1: loading
                             setIsPublishing(true);
                             setTimeout(() => {
-                                // Step 2: show "发布成功" + set published state immediately + toast
                                 setIsPublishing(false);
-                                setPublishSuccess(true);
                                 setIsPublished(true);
                                 setPublishedProjectName(projectName);
                                 setPublishVersion(1);
                                 setPublishedAt(new Date());
                                 showToast('✅ 发布成功！网站已上线');
-                                // Step 3: after 1s, hide "发布成功" → panel shows "撤回/更新" buttons, panel stays open
-                                setTimeout(() => {
-                                    setPublishSuccess(false);
-                                }, 1000);
                             }, 1000);
                         }}
                         className={cn(
@@ -678,14 +671,11 @@ export function ChatPage() {
                             isPublishing ? "bg-gray-800" : "bg-[#1A1A1A] hover:bg-black"
                         )}
                     >
-                        <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isPublishing || publishSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                        <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
                             发布
                         </div>
-                        <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !publishSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
+                        <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
                             <RefreshCw size={14} className="animate-spin" /> 正在发布...
-                        </div>
-                        <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
-                            <Check size={16} strokeWidth={3} /> 发布成功
                         </div>
                     </button>
                 )}
@@ -1969,7 +1959,7 @@ export function ChatPage() {
             {/* 全局 Toast 通知 */}
             {toast && (
                 <div className={cn(
-                    "fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-5 py-3 rounded-xl shadow-2xl text-[14px] font-semibold animate-in slide-in-from-bottom-4 fade-in duration-300",
+                    "fixed top-[18%] left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-5 py-3 rounded-xl shadow-2xl text-[14px] font-semibold animate-in slide-in-from-top-4 fade-in duration-300",
                     toast.type === 'success' ? "bg-[#1a1a1a] text-white" : "bg-red-600 text-white"
                 )}>
                     {toast.message}
