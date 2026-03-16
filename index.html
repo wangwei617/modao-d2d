@@ -345,7 +345,8 @@
       if ((hostname === '127.0.0.1' || hostname === 'localhost') && port !== '' && port !== '5174' && port !== '3000') {
         const demoLink = document.getElementById('demo-card-link');
         if (demoLink) {
-          demoLink.href = 'http://' + hostname + ':5174/app/';
+          // Vite 默认绑定到 localhost，强制使用 localhost 避免 127.0.0.1 拒绝连接的问题
+          demoLink.href = 'http://localhost:5174/app/';
         }
       }
     });
