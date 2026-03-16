@@ -36,6 +36,8 @@ export function ChatPage() {
     const [inputMessage, setInputMessage] = useState('');
     const [publishSuccess, setPublishSuccess] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [activeFile, setActiveFile] = useState('cart.html');
     const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('pc');
     const [showDeviceMenu, setShowDeviceMenu] = useState(false);
@@ -73,7 +75,8 @@ export function ChatPage() {
     const [projectName, setProjectName] = useState('电商购物App原型');
     const [customUrl, setCustomUrl] = useState('cart-app-58751561');
     const [publishedProjectName, setPublishedProjectName] = useState('');
-    const [publishVersion, setPublishVersion] = useState(0);
+    // Hover state to toggle underline on the link container
+    const [isLinkHovered, setIsLinkHovered] = useState(false);
     const [publishedAt, setPublishedAt] = useState<Date | null>(null);
 
     // Screenshot mode state
@@ -525,9 +528,16 @@ export function ChatPage() {
                                     />
                                 ) : (
                                     <span 
-                                        className="flex-1 text-[13px] font-medium text-gray-800 truncate cursor-pointer hover:text-indigo-600 transition-colors" 
-                                        title="点击复制链接"
-                                        onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
+                                        className={cn(
+                                            "flex-1 text-[13px] font-medium truncate transition-colors",
+                                            isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 underline underline-offset-2" : "text-gray-800"
+                                        )}
+                                        title={isPublished ? "点击在新标签页打开" : ""}
+                                        onClick={() => {
+                                            if (isPublished) {
+                                                window.open(`https://${customUrl}.modao.site`, '_blank');
+                                            }
+                                        }}
                                     >
                                         {customUrl}
                                     </span>
@@ -582,10 +592,36 @@ export function ChatPage() {
                 {isPublished ? (
                     <>
                         <button
-                            onClick={() => { setIsPublished(false); setPublishVersion(0); setPublishedAt(null); setPublishedProjectName(''); setShowPublishModal(false); }}
-                            className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white"
+                            disabled={isWithdrawing}
+                            onClick={() => {
+                                if (isWithdrawing) return;
+                                const confirmed = window.confirm('确定要撤回该项目的发布吗？撤回后线上链接将立即失效。');
+                                if (!confirmed) return;
+                                
+                                setIsWithdrawing(true);
+                                setTimeout(() => {
+                                    setIsWithdrawing(false);
+                                    setWithdrawSuccess(true);
+                                    setTimeout(() => {
+                                        setIsPublished(false);
+                                        setPublishVersion(0);
+                                        setPublishedAt(null);
+                                        setPublishedProjectName('');
+                                        setWithdrawSuccess(false);
+                                    }, 1000);
+                                }, 1500);
+                            }}
+                            className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white relative overflow-hidden"
                         >
-                            撤回
+                            <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isWithdrawing || withdrawSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
+                                撤回
+                            </div>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300 text-gray-500", isWithdrawing && !withdrawSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
+                                <RefreshCw size={14} className="animate-spin" /> 正在撤回...
+                            </div>
+                            <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", withdrawSuccess ? "translate-y-0 opacity-100 text-emerald-600" : "translate-y-10 opacity-0")}>
+                                <Check size={16} strokeWidth={3} /> 撤回成功
+                            </div>
                         </button>
                         <button
                             disabled={!hasPublishChanges || isPublishing}
@@ -600,8 +636,10 @@ export function ChatPage() {
                                         setPublishedProjectName(projectName);
                                         setPublishVersion(v => v + 1);
                                         setPublishedAt(new Date());
-                                        setShowPublishModal(false);
-                                    }, 1500);
+                                        setTimeout(() => {
+                                            setShowPublishModal(false);
+                                        }, 500);
+                                    }, 1000);
                                 }, 1000);
                             }}
                             className={cn(
@@ -615,7 +653,7 @@ export function ChatPage() {
                                 更新
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !publishSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                                <RefreshCw size={14} className="animate-spin" /> 正在发布...
+                                <RefreshCw size={14} className="animate-spin" /> 正在更新...
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", publishSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
                                 <Check size={16} strokeWidth={3} /> 更新成功
@@ -637,8 +675,10 @@ export function ChatPage() {
                                     setPublishedProjectName(projectName);
                                     setPublishVersion(1);
                                     setPublishedAt(new Date());
-                                    setShowPublishModal(false);
-                                }, 1500);
+                                    setTimeout(() => {
+                                        setShowPublishModal(false);
+                                    }, 500);
+                                }, 1000);
                             }, 1000);
                         }}
                         className={cn(
