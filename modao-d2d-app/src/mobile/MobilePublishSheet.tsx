@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { X, Check, RefreshCw, AlertCircle, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function MobilePublishSheet({ 
-    isOpen, 
+export function MobilePublishSheet({
+    isOpen,
     onClose,
     publishState,
     setPublishState
-}: { 
-    isOpen: boolean, 
+}: {
+    isOpen: boolean,
     onClose: () => void,
     publishState: any,
     setPublishState: any
@@ -25,7 +25,6 @@ export function MobilePublishSheet({
         setTimeout(() => setToast(null), 2500);
     };
 
-    // 简单实现格式化时间
     const formatPublishedAt = (date: Date) => {
         const diffInMinutes = Math.floor((new Date().getTime() - date.getTime()) / 60000);
         if (diffInMinutes < 1) return '刚刚';
@@ -41,13 +40,13 @@ export function MobilePublishSheet({
             isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}>
             {/* Backdrop */}
-            <div 
-                className={cn("absolute inset-0 bg-black/40 transition-opacity", isOpen ? "opacity-100" : "opacity-0")} 
+            <div
+                className={cn("absolute inset-0 bg-black/40 transition-opacity", isOpen ? "opacity-100" : "opacity-0")}
                 onClick={() => {
                     if (!showWithdrawConfirm && !isWithdrawing) onClose();
-                }} 
+                }}
             />
-            
+
             {/* Toast inside sheet context */}
             {toast && (
                 <div className={cn(
@@ -68,13 +67,13 @@ export function MobilePublishSheet({
                                 <h3 className="text-base font-bold text-gray-900 mb-2">确定要撤回发布吗？</h3>
                                 <p className="text-[13px] text-gray-500 mb-6">撤回后线上链接将立即失效。</p>
                                 <div className="flex justify-end gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => setShowWithdrawConfirm(false)}
                                         className="px-4 py-1.5 border border-gray-200 text-gray-700 bg-white rounded-lg text-[13px] font-semibold"
                                     >
                                         取消
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setShowWithdrawConfirm(false);
                                             setIsWithdrawing(true);
@@ -148,7 +147,7 @@ export function MobilePublishSheet({
                                         className="flex-1 bg-transparent text-[14px] font-bold text-gray-900 outline-none w-full"
                                     />
                                 ) : (
-                                    <span 
+                                    <span
                                         className={cn(
                                             "flex-1 text-[14px] font-bold truncate active:opacity-70 transition-opacity",
                                             publishState.isPublished ? "text-indigo-600 underline underline-offset-4" : "text-gray-800"
@@ -162,22 +161,22 @@ export function MobilePublishSheet({
                                 )}
                                 <span className="text-[13px] font-bold text-gray-400 ml-1 shrink-0">.modao.site</span>
                             </div>
-                            
+
                             {/* Action Buttons below URL in mobile */}
                             <div className="flex justify-end gap-2 mt-1">
                                 {isEditingUrl ? (
                                     <>
-                                        <button 
-                                            onClick={() => setIsEditingUrl(false)} 
+                                        <button
+                                            onClick={() => setIsEditingUrl(false)}
                                             className="px-4 py-2 bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl active:bg-gray-200"
                                         >
                                             取消
                                         </button>
-                                        <button 
-                                            onClick={() => { 
-                                                setPublishState((prev: any) => ({ ...prev, url: editUrlValue })); 
-                                                setIsEditingUrl(false); 
-                                            }} 
+                                        <button
+                                            onClick={() => {
+                                                setPublishState((prev: any) => ({ ...prev, url: editUrlValue }));
+                                                setIsEditingUrl(false);
+                                            }}
                                             className="px-4 py-2 bg-indigo-100 text-indigo-700 font-bold text-[13px] rounded-xl active:bg-indigo-200"
                                         >
                                             保存
@@ -185,18 +184,18 @@ export function MobilePublishSheet({
                                     </>
                                 ) : (
                                     <>
-                                        <button 
+                                        <button
                                             disabled={publishState.isPublished}
-                                            onClick={() => setIsEditingUrl(true)} 
+                                            onClick={() => setIsEditingUrl(true)}
                                             className={cn("px-4 py-2 font-bold text-[13px] rounded-xl transition-colors", publishState.isPublished ? "bg-gray-50 text-gray-300" : "bg-gray-100 text-gray-600 active:bg-gray-200")}
                                         >
                                             编辑链接
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(`https://${publishState.url}.modao.site`);
                                                 showToast('✅ 链接已复制');
-                                            }} 
+                                            }}
                                             className="px-4 py-2 bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl flex items-center gap-1.5 active:bg-gray-200"
                                         >
                                             <Copy size={14} /> 复制
@@ -229,8 +228,8 @@ export function MobilePublishSheet({
                                         setIsPublishing(true);
                                         setTimeout(() => {
                                             setIsPublishing(false);
-                                            setPublishState((prev: any) => ({ 
-                                                ...prev, 
+                                            setPublishState((prev: any) => ({
+                                                ...prev,
                                                 version: prev.version + 1,
                                                 publishedAt: new Date()
                                             }));
@@ -279,3 +278,4 @@ export function MobilePublishSheet({
         </div>
     );
 }
+

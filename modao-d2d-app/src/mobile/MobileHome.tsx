@@ -61,7 +61,7 @@ export function MobileHome({ onSend }: { onSend: (prompt: string) => void }) {
                     ))}
                 </div>
 
-                {/* Sub Cards (Only shown if 'generate' conceptually active - hardcoded here for demo flow) */}
+                {/* Sub Cards */}
                 <div className="mt-4 flex flex-col gap-3">
                     {generateCards.map(card => (
                         <button
@@ -69,8 +69,8 @@ export function MobileHome({ onSend }: { onSend: (prompt: string) => void }) {
                             onClick={() => setSelectedTag(card.title)}
                             className={cn(
                                 "flex items-center p-4 border rounded-2xl text-left transition-all",
-                                selectedTag === card.title 
-                                    ? "border-indigo-500 bg-indigo-50/50 shadow-sm ring-1 ring-indigo-500" 
+                                selectedTag === card.title
+                                    ? "border-indigo-500 bg-indigo-50/50 shadow-sm ring-1 ring-indigo-500"
                                     : "border-gray-100 bg-white hover:border-gray-200"
                             )}
                         >
@@ -105,7 +105,7 @@ export function MobileHome({ onSend }: { onSend: (prompt: string) => void }) {
                         </div>
                     </div>
                 )}
-                
+
                 <div className={cn(
                     "flex flex-col gap-2 p-3 rounded-2xl border transition-all",
                     inputValue ? "border-indigo-300 ring-4 ring-indigo-50" : "border-gray-200 bg-gray-50/50"
@@ -113,7 +113,7 @@ export function MobileHome({ onSend }: { onSend: (prompt: string) => void }) {
                     {selectedTag && (
                         <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold w-fit mb-1">
                             {selectedTag}
-                            <button onClick={() => setSelectedTag(null)}><X size={12}/></button>
+                            <button onClick={() => setSelectedTag(null)}><X size={12} /></button>
                         </div>
                     )}
                     <textarea
@@ -151,3 +151,4 @@ function X({ size }: { size: number }) {
         </svg>
     );
 }
+

@@ -24,7 +24,7 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
         publishedAt: Date | null;
     }>({
         isPublished: false,
-        url: `mobile-app-${Math.floor(Math.random()*100000)}`,
+        url: `mobile-app-${Math.floor(Math.random() * 100000)}`,
         projectName: '移动端生成应用',
         version: 0,
         publishedAt: null
@@ -56,7 +56,7 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
         setInputValue('');
         // 这里只是个外壳，真实追问逻辑复用太复杂，我们仅做展示
         setTimeout(() => {
-            setMessages(prev => [...prev, { id: Date.now().toString()+'ai', text: '移动端演示仅支持查看首次生成结果。', isUser: false }]);
+            setMessages(prev => [...prev, { id: Date.now().toString() + 'ai', text: '移动端演示仅支持查看首次生成结果。', isUser: false }]);
         }, 1000);
     };
 
@@ -76,8 +76,8 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
 
             {/* Chat Flow */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
-                <div className="text-center text-xs text-gray-400 font-medium my-2">今天 {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                
+                <div className="text-center text-xs text-gray-400 font-medium my-2">今天 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+
                 {messages.map(msg => (
                     <div key={msg.id} className={cn("flex flex-col max-w-[85%]", msg.isUser ? "ml-auto items-end" : "mr-auto items-start")}>
                         <div className={cn(
@@ -86,7 +86,7 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
                         )}>
                             {msg.text}
                         </div>
-                        
+
                         {!msg.isUser && msg.html && (
                             <div className="mt-3 w-full bg-white border border-gray-200 rounded-2xl p-3 shadow-sm min-w-[280px]">
                                 <div className="flex items-center gap-2 mb-3 px-1">
@@ -98,7 +98,7 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
                                         <div className="text-[11px] text-gray-500">包含完整的前后端逻辑</div>
                                     </div>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setShowPreview(true)}
                                     className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-indigo-600 font-bold text-[13px] rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-200/50"
                                 >
@@ -109,7 +109,7 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
                         )}
                     </div>
                 ))}
-                
+
                 {stage === 'generating' && (
                     <div className="mr-auto flex flex-col items-start gap-2 max-w-[85%]">
                         <div className="px-4 py-3 bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-bl-sm shadow-sm text-sm flex items-center gap-3">
@@ -123,13 +123,13 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
             {/* Input */}
             <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 shadow-lg">
                 <div className="flex items-center gap-2 bg-gray-50 rounded-full px-4 py-1 border border-gray-200 focus-within:border-indigo-400 focus-within:ring-2 ring-indigo-50">
-                    <input 
+                    <input
                         value={inputValue}
                         onChange={e => setInputValue(e.target.value)}
                         placeholder="继续追问..."
                         className="flex-1 bg-transparent border-none outline-none py-2.5 text-[14px]"
                     />
-                    <button 
+                    <button
                         onClick={handleSend}
                         disabled={!inputValue.trim()}
                         className={cn(
@@ -157,20 +157,20 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
                         <button className="p-2 text-gray-600 active:bg-gray-100 rounded-full">
                             <Share size={18} />
                         </button>
-                        <button 
+                        <button
                             onClick={() => setShowPublish(true)}
                             className={cn(
                                 "px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm active:scale-95 transition-transform flex items-center gap-1.5",
-                                publishState.isPublished 
-                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200" 
+                                publishState.isPublished
+                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                                     : "bg-indigo-600 text-white"
                             )}
                         >
-                            {publishState.isPublished ? <><Check size={14} strokeWidth={3}/> 已发布</> : <><Globe size={14} /> 发布</>}
+                            {publishState.isPublished ? <><Check size={14} strokeWidth={3} /> 已发布</> : <><Globe size={14} /> 发布</>}
                         </button>
                     </div>
                 </div>
-                
+
                 {/* Preview iframe */}
                 <div className="flex-1 bg-gray-100 relative">
                     <iframe
@@ -182,12 +182,13 @@ export function MobileChat({ initialPrompt, onBack }: { initialPrompt: string, o
             </div>
 
             {/* Publish Sheet */}
-            <MobilePublishSheet 
-                isOpen={showPublish} 
-                onClose={() => setShowPublish(false)} 
+            <MobilePublishSheet
+                isOpen={showPublish}
+                onClose={() => setShowPublish(false)}
                 publishState={publishState}
                 setPublishState={setPublishState}
             />
         </div>
     );
 }
+

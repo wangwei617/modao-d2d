@@ -1,4 +1,5 @@
 import { useSidebarContext } from '@/context/SidebarContext';
+import { tr } from '@/pc-en/tr';
 
 export function Header() {
     const { activeNav } = useSidebarContext();
@@ -18,7 +19,7 @@ export function Header() {
                 className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-600 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
             >
                 <span className="bg-purple-500 text-white rounded px-1 text-[10px] font-bold"></span>
-                HTML 转墨刀原型
+                {tr('HTML 转墨刀原型')}
             </button>
 
             <div className="flex items-center bg-indigo-50 rounded-full px-1 pl-3 py-1 gap-3">
@@ -32,7 +33,7 @@ export function Header() {
                 <button
                     className="bg-white text-indigo-600 px-3 py-0.5 rounded-full text-xs font-medium hover:bg-indigo-50 border border-indigo-100 shadow-sm transition-all"
                 >
-                    购买
+                    {tr('购买')}
                 </button>
             </div>
 

@@ -7,20 +7,28 @@ import { FeatureCards } from '@/components/home/FeatureCards';
 import { DesignSystemPage } from '@/components/home/DesignSystemPage';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { GlobalStyleCustomizer } from '@/components/home/GlobalStyleCustomizer';
-import { MobileApp } from '@/components/mobile/MobileApp';
+import { MobileApp } from '@/mobile/MobileApp';
 
 // Removed: SidebarContext definition (moved to external file)
 
 function App() {
-  const [isMobileMode, setIsMobileMode] = useState(() => window.location.hash === '#/mobile');
+  const [hash, setHash] = useState(() => window.location.hash);
 
   useEffect(() => {
     const handleHashChange = () => {
-      setIsMobileMode(window.location.hash === '#/mobile');
+      setHash(window.location.hash);
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  const isMobileMode = hash === '#/mobile';
+  const isEnglishMode = hash === '#/en';
+
+  // Expose locale for translation helper
+  if (typeof window !== 'undefined') {
+    window.__PRODES_LOCALE__ = isEnglishMode ? 'en' : 'zh';
+  }
 
   const [activeNav, setActiveNav] = useState('home');
   const [isCategorySelected, setIsCategorySelected] = useState(false);

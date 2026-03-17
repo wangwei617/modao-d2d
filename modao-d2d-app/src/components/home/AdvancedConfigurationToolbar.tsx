@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { tr } from '@/pc-en/tr';
 
 // ---- 设计系统选项 ----
 interface DesignSystem {
@@ -167,7 +168,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                         ) : (
                             <Microscope size={13} className="text-gray-600" />
                         )}
-                        {generationMode.id === 'fast' ? '极速' : '深度'}
+                        {generationMode.id === 'fast' ? tr('极速') : tr('深度')}
                         <ChevronDown size={12} className={cn("text-gray-300 transition-transform", showModeDropdown && "rotate-180")} />
                     </button>
                     {showModeDropdown && (
@@ -206,8 +207,8 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
 
                                         {/* Texts */}
                                         <div className="flex-1">
-                                            <div className="text-[14px] text-slate-800 font-bold tracking-tight mb-0.5">{mode.label}</div>
-                                            <div className="text-[11px] text-slate-400 font-medium">{mode.desc}</div>
+                                            <div className="text-[14px] text-slate-800 font-bold tracking-tight mb-0.5">{tr(mode.label)}</div>
+                                            <div className="text-[11px] text-slate-400 font-medium">{tr(mode.desc)}</div>
                                         </div>
                                     </button>
                                 ))}
@@ -258,12 +259,12 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                     {selectedDS.isShadcn ? (
                         <>
                             <div className="w-3 h-3 rounded-full shadow-inner" style={{ background: `linear-gradient(135deg, ${selectedTheme.colors.join(', ')})` }} />
-                            <span>{selectedTheme.name}</span>
+                            <span>{tr(selectedTheme.name)}</span>
                         </>
                     ) : (
                         <>
                             <div className="w-3 h-3 rounded-full shadow-inner" style={selectedColor.id === 'auto' ? { background: selectedColor.gradient } : { background: selectedColor.color }} />
-                            <span>{darkMode === 'light' ? '亮色' : '暗色'}</span>
+                            <span>{darkMode === 'light' ? tr('亮色') : tr('暗色')}</span>
                         </>
                     )}
                     <ChevronDown size={12} className={cn("text-gray-300 transition-transform", showConfigDropdown && "rotate-180")} />
@@ -272,7 +273,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                     <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-gray-100 rounded-2xl shadow-xl p-4 w-[240px] animate-in fade-in slide-in-from-top-2 duration-200">
                         {selectedDS.isShadcn ? (
                             <>
-                                <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-3 px-1">主题色</div>
+                                <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-3 px-1">{tr('主题色')}</div>
                                 <div className="flex flex-col gap-1">
                                     {SHADCN_THEMES.map(theme => (
                                         <button
@@ -284,7 +285,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                                             )}
                                         >
                                             <div className="w-6 h-6 rounded-lg border border-gray-100 shadow-sm" style={{ background: `linear-gradient(135deg, ${theme.colors.join(', ')})` }} />
-                                            <span className={cn("text-xs font-bold", selectedTheme.id === theme.id ? "text-gray-800" : "text-gray-500")}>{theme.name}</span>
+                                            <span className={cn("text-xs font-bold", selectedTheme.id === theme.id ? "text-gray-800" : "text-gray-500")}>{tr(theme.name)}</span>
                                             {selectedTheme.id === theme.id && <Check size={12} className="ml-auto text-gray-800" strokeWidth={3} />}
                                         </button>
                                     ))}
@@ -293,7 +294,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                         ) : (
                             <>
                                 <div className="mb-4">
-                                    <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">外观</div>
+                                    <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('外观')}</div>
                                     <div className="flex p-1 bg-gray-50 rounded-xl border border-gray-100/50">
                                         <button
                                             onClick={() => setDarkMode('light')}
@@ -302,7 +303,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                                                 darkMode === 'light' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
                                             )}
                                         >
-                                            <Sun size={14} /> 亮色
+                                            <Sun size={14} /> {tr('亮色')}
                                         </button>
                                         <button
                                             onClick={() => setDarkMode('dark')}
@@ -311,12 +312,12 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                                                 darkMode === 'dark' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
                                             )}
                                         >
-                                            <Moon size={14} /> 暗色
+                                            <Moon size={14} /> {tr('暗色')}
                                         </button>
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">主题色</div>
+                                    <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('主题色')}</div>
                                     <div className="flex justify-between items-center px-1">
                                         {PRIMARY_COLORS.map(c => (
                                             <div key={c.id} className="relative flex justify-center group/color">
@@ -329,7 +330,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                                                     style={c.id === 'auto' ? { background: c.gradient } : { background: c.color }}
                                                 />
                                                 <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                                    {c.label}
+                                                    {tr(c.label)}
                                                 </div>
                                             </div>
                                         ))}

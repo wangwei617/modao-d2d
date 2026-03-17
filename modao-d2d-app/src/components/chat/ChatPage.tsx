@@ -3,6 +3,8 @@ import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smar
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { tr } from '@/pc-en/tr';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarContext } from '@/context/SidebarContext';
 import { streamGenerateApp } from '@/lib/geminiService';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -44,9 +46,11 @@ export function ChatPage() {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     };
+    const isEnglish = typeof window !== 'undefined' && window.__PRODES_LOCALE__ === 'en';
     const [activeFile, setActiveFile] = useState('cart.html');
     const [deviceMode, setDeviceMode] = useState<'mobile' | 'pad' | 'pc'>('pc');
     const [showDeviceMenu, setShowDeviceMenu] = useState(false);
+    const [showPageMenu, setShowPageMenu] = useState(false);
     const deviceMenuRef = useRef<HTMLDivElement>(null);
     const [showVersionMenu, setShowVersionMenu] = useState(false);
     const [activeVersion, setActiveVersion] = useState('V2');
@@ -101,7 +105,7 @@ export function ChatPage() {
     const [showPublishModal, setShowPublishModal] = useState(false);
     const publishPanelRef = useRef<HTMLDivElement>(null);
     const [isPublished, setIsPublished] = useState(false);
-    const [projectName, setProjectName] = useState('电商购物App原型');
+    const [projectName, setProjectName] = useState(tr('电商购物App原型'));
     const [customUrl, setCustomUrl] = useState('cart-app-58751561');
     const [publishedProjectName, setPublishedProjectName] = useState('');
     const [publishedAt, setPublishedAt] = useState<Date | null>(null);
@@ -233,7 +237,7 @@ export function ChatPage() {
             id: sessionId,
             prompt,
             stage: 'thinking',
-            thinkingText: '正在理解需求...',
+            thinkingText: tr('正在理解需求...'),
             executingItems: [],
             generatedHtml: '',
             streamingCode: '',
@@ -246,7 +250,7 @@ export function ChatPage() {
         setActiveTab('preview');
 
         // Thinking 动画 (约2秒)
-        const thinkingTexts = ['正在理解需求...', '分析产品架构...', '准备生成方案...'];
+        const thinkingTexts = [tr('正在理解需求...'), tr('分析产品架构...'), tr('准备生成方案...')];
         for (const t of thinkingTexts) {
             updateSession(sessionId, { thinkingText: t });
             await new Promise((r) => setTimeout(r, 650));
@@ -266,7 +270,7 @@ export function ChatPage() {
 
     const handleSendMessage = () => {
         if (!inputMessage.trim() && capturedImages.length === 0) return;
-        const finalPrompt = inputMessage.trim() || '请根据提供的截图优化';
+        const finalPrompt = inputMessage.trim() || tr('请根据提供的截图优化');
         startGeneration(finalPrompt);
         setInputMessage('');
         setCapturedImages([]);
@@ -406,11 +410,11 @@ export function ChatPage() {
                     <button
                         onClick={() => setShareTab('project')}
                         className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition-all", shareTab === 'project' ? "bg-white text-[#4f46e5] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                    >分享项目</button>
+                    >{tr('分享项目')}</button>
                     <button
                         onClick={() => setShareTab('file')}
                         className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition-all", shareTab === 'file' ? "bg-white text-[#4f46e5] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                    >分享文件</button>
+                    >{tr('分享文件')}</button>
                 </div>
                 <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition" onClick={() => setShowSharePanel(false)}>
                     <X size={15} />
@@ -423,12 +427,12 @@ export function ChatPage() {
                     <div className="mt-0.5 text-slate-400">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     </div>
-                    <span>{shareTab === 'project' ? '把整个对话和对话中生成的所有内容分享出去' : '只分享当前所选的文件'}</span>
+                    <span>{shareTab === 'project' ? tr('把整个对话和对话中生成的所有内容分享出去') : tr('只分享当前所选的文件')}</span>
                 </div>
 
                 {/* Access permission */}
                 <div>
-                    <div className="text-[13px] font-bold text-slate-700 mb-2.5">链接访问权限</div>
+                    <div className="text-[13px] font-bold text-slate-700 mb-2.5">{tr('链接访问权限')}</div>
                     <div className="border border-slate-100 rounded-xl overflow-hidden divide-y divide-slate-100">
                         <div className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer transition select-none">
                             <div className="flex items-center gap-3">
@@ -436,8 +440,8 @@ export function ChatPage() {
                                     <Lock size={14} />
                                 </div>
                                 <div>
-                                    <div className="text-[13px] font-semibold text-slate-700">仅限自己</div>
-                                    <div className="text-[11px] text-slate-400 mt-0.5">仅自己可见</div>
+                                    <div className="text-[13px] font-semibold text-slate-700">{tr('仅限自己')}</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">{tr('仅自己可见')}</div>
                                 </div>
                             </div>
                         </div>
@@ -447,8 +451,8 @@ export function ChatPage() {
                                     <Globe size={14} />
                                 </div>
                                 <div>
-                                    <div className="text-[13px] font-semibold text-slate-700">公开</div>
-                                    <div className="text-[11px] text-slate-400 mt-0.5">获得链接的人可访问</div>
+                                    <div className="text-[13px] font-semibold text-slate-700">{tr('公开')}</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">{tr('获得链接的人可访问')}</div>
                                 </div>
                             </div>
                             <Check size={15} className="text-[#4f46e5] shrink-0" strokeWidth={2.5} />
@@ -459,7 +463,7 @@ export function ChatPage() {
                 {/* Replay mode toggle - only show for project tab */}
                 {shareTab === 'project' && (
                     <div className="flex items-center justify-between px-1">
-                        <div className="text-[13px] font-semibold text-slate-700">回放模式</div>
+                        <div className="text-[13px] font-semibold text-slate-700">{tr('回放模式')}</div>
                         <div className="w-10 h-[22px] bg-[#6366f1] rounded-full flex items-center p-0.5 justify-end cursor-pointer">
                             <div className="w-[18px] h-[18px] bg-white rounded-full shadow-sm" />
                         </div>
@@ -469,7 +473,7 @@ export function ChatPage() {
                 {/* Action buttons */}
                 <div className="space-y-2 pt-0.5">
                     <button className="w-full h-10 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-[13px] font-bold rounded-xl transition-colors active:scale-[0.98] shadow-sm">
-                        复制链接
+                        {tr('复制链接')}
                     </button>
                 </div>
             </div>
@@ -481,19 +485,19 @@ export function ChatPage() {
     const formatPublishedAt = (date: Date) => {
         const diffMs = Date.now() - date.getTime();
         const diffMins = Math.floor(diffMs / 60000);
-        if (diffMins < 1) return '刚刚';
-        if (diffMins < 60) return `${diffMins} 分钟前`;
+        if (diffMins < 1) return tr('刚刚');
+        if (diffMins < 60) return tr('{{n}} 分钟前').replace('{{n}}', String(diffMins));
         const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours} 小时前`;
+        if (diffHours < 24) return tr('{{n}} 小时前').replace('{{n}}', String(diffHours));
         const diffDays = Math.floor(diffHours / 24);
-        return `${diffDays} 天前`;
+        return tr('{{n}} 天前').replace('{{n}}', String(diffDays));
     };
 
     const publishDropdown = (
         <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/60 w-[420px] z-50 cursor-default animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="text-[15px] font-bold text-gray-900">发布网站</div>
+                <div className="text-[15px] font-bold text-gray-900">{tr('发布网站')}</div>
                 <button onClick={() => setShowPublishModal(false)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
                     <X size={15} />
                 </button>
@@ -503,7 +507,7 @@ export function ChatPage() {
             <div className="px-6 py-5 space-y-5">
                 {/* Page name */}
                 <div className="flex items-center gap-4">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">项目名称</span>
+                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">{tr('项目名称')}</span>
                     <input
                         value={projectName}
                         onChange={e => setProjectName(e.target.value)}
@@ -513,15 +517,15 @@ export function ChatPage() {
 
                 {/* Status */}
                 <div className="flex items-center gap-4">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">当前状态</span>
+                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0">{tr('当前状态')}</span>
                     {isPublished ? (
                         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[12px] font-semibold border border-emerald-100">
                             <CheckCircle2 size={13} strokeWidth={2.5} />
-                            已发布
+                            {tr('已发布')}
                         </div>
                     ) : (
                         <div className="flex items-center gap-1.5 bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[12px] font-semibold border border-slate-200">
-                            未发布
+                            {tr('未发布')}
                         </div>
                     )}
                 </div>
@@ -529,7 +533,7 @@ export function ChatPage() {
                 {/* Last published time - shown whenever there's a publish record, degraded when unpublished */}
                 {publishedAt && (
                     <div className="flex items-center gap-4">
-                        <span className={cn("text-[13px] font-semibold w-[60px] shrink-0", isPublished ? "text-gray-500" : "text-gray-400")}>最近发布时间</span>
+                        <span className={cn("text-[13px] font-semibold w-[60px] shrink-0", isPublished ? "text-gray-500" : "text-gray-400")}>{tr('最近发布时间')}</span>
                         <span className={cn("text-[13px] font-medium", isPublished ? "text-gray-700" : "text-gray-400")}>
                             {formatPublishedAt(publishedAt)} · V{publishVersion}
                         </span>
@@ -538,7 +542,7 @@ export function ChatPage() {
 
                 {/* URL */}
                 <div className="flex items-start gap-4">
-                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0 mt-2.5">访问链接</span>
+                    <span className="text-[13px] font-semibold text-gray-500 w-[60px] shrink-0 mt-2.5">{tr('访问链接')}</span>
                     <div className="flex-1 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <div className={cn("flex-1 flex items-center border rounded-lg px-3 py-2 transition", isEditingUrl ? "border-indigo-300 ring-2 ring-indigo-100 bg-white" : "border-gray-50 bg-gray-50")}>
@@ -549,7 +553,7 @@ export function ChatPage() {
                                         onChange={e => { setEditUrlValue(e.target.value); setUrlError(''); }}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
-                                                if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用');
+                                                if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError(tr('该链接已被占用'));
                                                 else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); }
                                             }
                                             if (e.key === 'Escape') setIsEditingUrl(false);
@@ -562,7 +566,7 @@ export function ChatPage() {
                                             "flex-1 text-[13px] font-medium truncate transition-colors",
                                             isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-2" : "text-gray-800 cursor-pointer hover:text-indigo-600 hover:underline underline-offset-2"
                                         )}
-                                        title={isPublished ? "点击在新标签页打开" : "点击在新标签页打开预览"}
+                                        title={isPublished ? tr("点击在新标签页打开") : tr("点击在新标签页打开预览")}
                                         onClick={() => {
                                             window.open(`https://${customUrl}.modao.site`, '_blank');
                                         }}
@@ -577,31 +581,31 @@ export function ChatPage() {
                             {isEditingUrl ? (
                                 <div className="flex items-center gap-0.5 shrink-0">
                                     <button 
-                                        title="保存"
-                                        onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError('该链接已被占用'); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} 
+                                        title={tr("保存")}
+                                        onClick={() => { if (EXISTING_URLS.includes(editUrlValue) && editUrlValue !== customUrl) setUrlError(tr('该链接已被占用')); else { setCustomUrl(editUrlValue); setIsEditingUrl(false); setUrlError(''); } }} 
                                         className="px-3 py-2 bg-indigo-50 text-indigo-600 font-bold text-[13px] rounded-lg hover:bg-indigo-100 transition"
                                     >
-                                        保存
+                                        {tr('保存')}
                                     </button>
                                     <button 
-                                        title="取消"
+                                        title={tr("取消")}
                                         onClick={() => setIsEditingUrl(false)} 
                                         className="px-3 py-2 bg-gray-100 text-gray-500 font-bold text-[13px] rounded-lg hover:bg-gray-200 transition"
                                     >
-                                        取消
+                                        {tr('取消')}
                                     </button>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-0.5 shrink-0">
                                     <button
-                                        title="复制链接"
+                                        title={tr("复制链接")}
                                         onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
                                         className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
                                     >
                                         {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
                                     </button>
                                     <button
-                                        title="编辑域名前缀"
+                                        title={tr("编辑域名前缀")}
                                         onClick={() => { setEditUrlValue(customUrl); setIsEditingUrl(true); }}
                                         className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
                                     >
@@ -629,10 +633,10 @@ export function ChatPage() {
                             className="flex-1 h-[42px] rounded-[10px] border border-gray-200 text-gray-800 font-semibold text-[14px] hover:bg-gray-50 transition bg-white relative overflow-hidden"
                         >
                             <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", isWithdrawing ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
-                                撤回
+                                {tr('撤回')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300 text-gray-500", isWithdrawing ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                                <RefreshCw size={14} className="animate-spin" /> 正在撤回...
+                                <RefreshCw size={14} className="animate-spin" /> {tr('正在撤回...')}
                             </div>
                         </button>
                         <button
@@ -647,7 +651,7 @@ export function ChatPage() {
                                     setPublishedProjectName(projectName);
                                     setPublishVersion(v => v + 1);
                                     setPublishedAt(new Date());
-                                    showToast('✅ 更新成功！');
+                                    showToast(tr('✅ 更新成功！'));
                                     setTimeout(() => {
                                         setUpdateSuccess(false);
                                     }, 1000);
@@ -661,13 +665,13 @@ export function ChatPage() {
                             )}
                         >
                             <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", (isPublishing || updateSuccess) ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
-                                更新
+                                {tr('更新')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !updateSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                                <RefreshCw size={14} className="animate-spin" /> 正在更新...
+                                <RefreshCw size={14} className="animate-spin" /> {tr('正在更新...')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", updateSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
-                                <Check size={16} strokeWidth={3} /> 更新成功
+                                <Check size={16} strokeWidth={3} /> {tr('更新成功')}
                             </div>
                         </button>
                     </>
@@ -684,7 +688,7 @@ export function ChatPage() {
                                 setPublishedProjectName(projectName);
                                 setPublishVersion(1);
                                 setPublishedAt(new Date());
-                                showToast('✅ 发布成功！网站已上线');
+                                showToast(tr('✅ 发布成功！网站已上线'));
                             }, 1000);
                         }}
                         className={cn(
@@ -693,10 +697,10 @@ export function ChatPage() {
                         )}
                     >
                         <div className={cn("flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing ? "-translate-y-10 opacity-0" : "translate-y-0 opacity-100")}>
-                            发布
+                            {tr('发布')}
                         </div>
                         <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                            <RefreshCw size={14} className="animate-spin" /> 正在发布...
+                            <RefreshCw size={14} className="animate-spin" /> {tr('正在发布...')}
                         </div>
                     </button>
                 )}
@@ -715,8 +719,8 @@ export function ChatPage() {
                         <MonitorSmartphone size={24} className="text-slate-300" />
                     </div>
                     <div className="text-center">
-                        <p className="text-[14px] font-semibold text-slate-700">等待生成内容</p>
-                        <p className="text-[13px] mt-1">在左侧输入需求，AI将为您生成产品并在右侧展示</p>
+                        <p className="text-[14px] font-semibold text-slate-700">{tr('等待生成内容')}</p>
+                        <p className="text-[13px] mt-1">{tr('在左侧输入需求，AI将为您生成产品并在右侧展示')}</p>
                     </div>
                  </div>
              );
@@ -739,7 +743,7 @@ export function ChatPage() {
                             </div>
                             <div className="h-40 bg-slate-200 rounded-xl animate-pulse" />
                         </div>
-                        <p className="text-[13px] font-medium text-slate-500 mt-6">AI 正在生成中，请稍候...</p>
+                        <p className="text-[13px] font-medium text-slate-500 mt-6">{tr('AI 正在生成中，请稍候...')}</p>
                     </div>
                 </div>
             );
@@ -759,20 +763,27 @@ export function ChatPage() {
                                 </div>
                                 <div className="h-48 bg-slate-200 rounded-xl animate-pulse" />
                             </div>
-                            <p className="text-[13px] font-medium text-slate-500 mt-8">AI 正在绘制界面结构并添加样式...</p>
+                            <p className="text-[13px] font-medium text-slate-500 mt-8">{tr('AI 正在绘制界面结构并添加样式...')}</p>
                         </div>
                     </div>
                 );
             }
             if (currentSession.streamingCode || currentSession.generatedHtml) {
                 return (
-                    <div className="flex-1 w-full h-full p-2 bg-slate-100/50">
+                    <div
+                        className={cn(
+                            "flex-1 w-full h-full p-2 bg-slate-100/50",
+                            deviceMode !== 'pc' && "flex items-center justify-center"
+                        )}
+                    >
                         {/* 模拟浏览器容器 */}
                         <div className={cn(
                             "h-full overflow-hidden flex flex-col relative mx-auto transition-all duration-300",
-                            deviceMode === 'pc' ? "w-full bg-white rounded-xl border border-slate-200 shadow-sm" : 
-                            deviceMode === 'pad' ? "w-[800px] bg-white rounded-xl border border-slate-200 shadow-xl" :
-                            "w-[390px] bg-white rounded-xl border border-slate-200 shadow-xl"
+                            deviceMode === 'pc'
+                                ? "w-full bg-white rounded-xl border border-slate-200 shadow-sm"
+                                : deviceMode === 'pad'
+                                    ? "w-full max-w-[820px] max-h-[1180px] bg-white rounded-xl border border-slate-200 shadow-xl"
+                                    : "w-full max-w-[393px] max-h-[852px] bg-white rounded-xl border border-slate-200 shadow-xl"
                         )}>
                             {/* Browser Bar */}
                             <div className="h-10 border-b border-slate-100 bg-slate-50/80 flex items-center px-4 gap-4">
@@ -804,7 +815,7 @@ export function ChatPage() {
                                 {isGenerating && (
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-indigo-600 text-white px-4 py-2 text-[12px] font-bold rounded-full shadow-lg flex items-center gap-2">
                                         <RefreshCw size={12} className="animate-spin" />
-                                        <span>代码正在流式渲染...</span>
+                                        <span>{tr('代码正在流式渲染...')}</span>
                                     </div>
                                 )}
                             </div>
@@ -822,7 +833,7 @@ export function ChatPage() {
                         {isGenerating && (
                             <div className="flex items-center gap-2 text-indigo-500 mb-4 pb-4 border-b border-slate-200 text-[12px]">
                                 <RefreshCw size={12} className="animate-spin" />
-                                接收流式代码中...
+                                {tr('接收流式代码中...')}
                             </div>
                         )}
                         <pre className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed break-all">
@@ -830,7 +841,7 @@ export function ChatPage() {
                                 <code className="text-slate-800">{currentSession.streamingCode || currentSession.generatedHtml}</code>
                             )}
                             {(!currentSession.streamingCode && !currentSession.generatedHtml) && (
-                                <span className="text-slate-400">等待代码生成...</span>
+                                <span className="text-slate-400">{tr('等待代码生成...')}</span>
                             )}
                         </pre>
                     </ScrollArea>
@@ -845,8 +856,8 @@ export function ChatPage() {
                         <Settings size={28} className="text-slate-300" />
                     </div>
                     <div className="text-center">
-                        <p className="text-[14px] font-semibold text-slate-700">暂不支持当前模式</p>
-                        <p className="text-[13px] mt-1">此 Tab 规划中，将在后续版本上线</p>
+                        <p className="text-[14px] font-semibold text-slate-700">{tr('暂不支持当前模式')}</p>
+                        <p className="text-[13px] mt-1">{tr('此 Tab 规划中，将在后续版本上线')}</p>
                     </div>
                  </div>
             );
@@ -877,6 +888,7 @@ export function ChatPage() {
 
     return (
 
+        <TooltipProvider delayDuration={120}>
         <>
             <div className="w-full h-full flex bg-white animate-in fade-in duration-300">
                 {/* Left Panel: Sidebar equivalent / Chat & History */}
@@ -903,7 +915,7 @@ export function ChatPage() {
                                     <button onClick={() => setSidebarCollapsed(false)} className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 -ml-1.5 rounded transition-colors shrink-0">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 15 3-3-3-3" /><line x1="15" x2="15" y1="3" y2="21" /></svg>
                                     </button>
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover/expand:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">展开左侧栏</div>
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover/expand:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('展开左侧栏')}</div>
                                 </div>
                                 <div className="relative group/newchat shrink-0">
                                     <button
@@ -912,17 +924,17 @@ export function ChatPage() {
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                                     </button>
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover/newchat:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">新建项目</div>
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover/newchat:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('新建项目')}</div>
                                 </div>
                             </>
                         )}
-                        <div className="font-bold text-slate-800 text-[14px] tracking-tight whitespace-nowrap overflow-hidden text-ellipsis mr-auto">墨刀AI设计助手</div>
+                        <div className="font-bold text-slate-800 text-[14px] tracking-tight whitespace-nowrap overflow-hidden text-ellipsis mr-auto">{tr('墨刀AI设计助手')}</div>
                         <div className="ml-auto bg-[#EEF2FF] text-slate-800 rounded-full flex items-center h-[30px] px-3 font-bold cursor-pointer transition-all active:scale-95 hover:bg-indigo-50 shrink-0 divide-x divide-[#C7D2FE]/60">
                             <div className="flex items-center gap-1.5 pr-2.5">
                                 <Sparkles size={14} className="text-[#6A5DF1]" fill="currentColor" />
                                 <span className="font-mono text-[14px] text-slate-900 tracking-tight">9999</span>
                             </div>
-                            <div className="pl-2.5 text-[12px] text-[#4338CA]">购买</div>
+                            <div className="pl-2.5 text-[12px] text-[#4338CA]">{tr('购买')}</div>
                         </div>
                     </div>
                     <ScrollArea className="flex-1 px-4">
@@ -935,8 +947,8 @@ export function ChatPage() {
                                             <Sparkles size={12} fill="white" />
                                         </div>
                                         <div className="bg-slate-50 border border-slate-100/50 text-slate-700 px-4 py-3 rounded-2xl max-w-[100%] mr-auto">
-                                            <p className="text-[13px] leading-relaxed">你好！我是墨刀 AI 设计助手，专注于完整的端到端产品架构生成与开发。</p>
-                                            <p className="text-[13px] leading-relaxed mt-2 text-slate-500">你可以对我说："生成一个带深色模式的现代任务管理 SaaS 后台" 或 "帮我做一个电商小程序的商品列表页"。</p>
+                                            <p className="text-[13px] leading-relaxed">{tr('你好！我是墨刀 AI 设计助手，专注于完整的端到端产品架构生成与开发。')}</p>
+                                            <p className="text-[13px] leading-relaxed mt-2 text-slate-500">{tr('你可以对我说："生成一个带深色模式的现代任务管理 SaaS 后台" 或 "帮我做一个电商小程序的商品列表页"。')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -950,7 +962,7 @@ export function ChatPage() {
                             {session.prompt && (
                                 <div className="flex justify-end">
                                     <div className="max-w-[85%] bg-slate-100 text-slate-800 px-4 py-2.5 rounded-2xl rounded-tr-sm text-[13px] leading-relaxed break-words font-medium">
-                                        {userPrompt || '生成一个电商购物App首页'}
+                                        {userPrompt || tr('生成一个电商购物App首页')}
                                     </div>
                                 </div>
                             )}
@@ -984,6 +996,9 @@ export function ChatPage() {
                                         {session.executingItems.map((item, i) => {
                                             const isFileStep = item.label.startsWith('已完成创建 ');
                                             const fileName = isFileStep ? item.label.replace('已完成创建 ', '').trim() : null;
+                                            const displayLabel = isFileStep && fileName
+                                                ? tr('已完成创建 {{file}}').replace('{{file}}', fileName)
+                                                : tr(item.label);
                                             return (
                                                 <div
                                                     key={i}
@@ -996,14 +1011,14 @@ export function ChatPage() {
                                                     style={isFileStep ? { cursor: 'pointer' } : undefined}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                                    <span className="font-medium">{item.label}</span>
+                                                    <span className="font-medium">{displayLabel}</span>
                                                 </div>
                                             );
                                         })}
                                         {session.stage === 'executing' && (
                                             <div className="flex items-center gap-2 text-[11px] text-slate-400 px-2 mt-1">
                                                 <RefreshCw size={11} className="animate-spin" />
-                                                正在执行...
+                                                {tr('正在执行...')}
                                             </div>
                                         )}
                                     </div>
@@ -1019,7 +1034,7 @@ export function ChatPage() {
                                     <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-3 border border-slate-100">
                                         <div className="flex items-center gap-2 text-[12px] text-slate-500">
                                             <RefreshCw size={12} className="animate-spin text-indigo-500" />
-                                            正在生成代码（{Math.round(session.streamingCode.length / 10) * 10} 字符）...
+                                            {tr('正在生成代码（{{n}} 字符）...').replace('{{n}}', String(Math.round(session.streamingCode.length / 10) * 10))}
                                         </div>
                                     </div>
                                 </div>
@@ -1034,17 +1049,17 @@ export function ChatPage() {
                                             <Sparkles size={12} className="text-white" fill="white" />
                                         </div>
                                         <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-3 border border-slate-100 text-[13px] text-slate-600">
-                                            <p>已为您生成以下内容，点击卡片可在右侧查看：</p>
+                                            <p>{tr('已为您生成以下内容，点击卡片可在右侧查看：')}</p>
                                         </div>
                                     </div>
 
                                     {/* 4类文件卡片 */}
                                     <div className="ml-8 space-y-2">
                                         {([
-                                            { type: 'document' as FileCardType, title: '设计评审文档', subtitle: '文档', icon: 'doc' },
-                                            { type: 'single' as FileCardType, title: '单页应用', subtitle: '单页面', icon: 'single' },
-                                            { type: 'multi' as FileCardType, title: session.prompt.slice(0, 12) + '多页原型', subtitle: '多页面', icon: 'multi' },
-                                            { type: 'app' as FileCardType, title: session.prompt.slice(0, 10) + 'App原型', subtitle: '应用', icon: 'app' },
+                                            { type: 'document' as FileCardType, title: tr('设计评审文档'), subtitle: tr('文档'), icon: 'doc' },
+                                            { type: 'single' as FileCardType, title: tr('单页 HTML'), subtitle: tr('单页'), icon: 'single' },
+                                            { type: 'multi' as FileCardType, title: tr('多页 HTML'), subtitle: tr('多页'), icon: 'multi' },
+                                            { type: 'app' as FileCardType, title: session.prompt.slice(0, 10) + tr('App原型'), subtitle: tr('应用'), icon: 'app' },
                                         ] as const).map((card) => (
                                             <div
                                                 key={card.type}
@@ -1147,7 +1162,7 @@ export function ChatPage() {
                 </div>
                 ) : (
                     <div className="bg-[#FAFAFA] border-r border-slate-100 flex flex-col items-center py-4 shrink-0 relative z-20 transition-all duration-300 w-14">
-                        <button onClick={() => setIsChatOpen(true)} title="展开助手" className="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                        <button onClick={() => setIsChatOpen(true)} title={tr('展开助手')} className="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 flex items-center justify-center transition-colors">
                             <PanelLeft size={18} />
                         </button>
                     </div>
@@ -1163,11 +1178,11 @@ export function ChatPage() {
                                     <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center shrink-0">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2" /><path d="M12 18h.01" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" /></svg>
                                     </div>
-                                    <span className="text-sm font-semibold text-gray-800">墨刀AI的虚拟电脑</span>
+                                    <span className="text-sm font-semibold text-gray-800">{tr('墨刀AI的虚拟电脑')}</span>
                                     <div className="w-px h-4 bg-gray-200 mx-1" />
                                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-100 text-xs text-gray-600 font-medium">
                                         <Edit3 size={12} className="text-gray-400" />
-                                        已完成编辑 <span className="text-gray-500">{activeTerminalFile}</span>
+                                        {tr('已完成编辑')} <span className="text-gray-500">{activeTerminalFile}</span>
                                     </div>
                                 </div>
                                 <button onClick={() => setActiveMessage('html')} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-gray-400">
@@ -1177,18 +1192,32 @@ export function ChatPage() {
                             {/* Terminal Body */}
                             <ScrollArea className="flex-1 bg-white p-8 relative">
                                 <div className="max-w-4xl">
-                                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">墨刀AI平台UI设计规范评审报告</h1>
+                                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">
+                                        {isEnglish ? 'Prodes AI UI specification review' : '墨刀AI平台UI设计规范评审报告'}
+                                    </h1>
                                     <div className="text-sm font-medium text-gray-500 mb-8 pb-8 border-b border-gray-100">
-                                        UI Specification &amp; Visual Design Review <br />评审日期：2026年02月26日
+                                        UI Specification &amp; Visual Design Review <br />{isEnglish ? 'Review date: 2026-02-26' : '评审日期：2026年02月26日'}
                                     </div>
-                                    <h2 className="text-xl font-bold text-gray-800 mb-4 mt-8">执行摘要</h2>
-                                    <h3 className="text-base font-bold text-gray-700 mb-2">评审范围与输入</h3>
-                                    <p className="text-[14px] text-gray-600 leading-relaxed mb-6">本次评审基于提供的AI辅助工具网页界面截图进行。通过识图分析，界面被识别为"墨刀AI"平台的首页，包含顶部导航、中部主交互区（智能体问候、功能输入框、快捷功能入口）以及底部的精选案例展示区。评审聚焦于视觉规范与用户体验的五维度分析。</p>
-                                    <h3 className="text-base font-bold text-gray-700 mb-2">核心结论</h3>
-                                    <p className="text-[14px] text-gray-600 leading-relaxed mb-8">界面整体呈现现代简约的扁平化设计风格，视觉层级清晰，核心交互区聚焦。主要亮点在于清晰的布局结构和科技感的色彩点缀。优化空间主要集中在底部区域留白、辅助功能的视觉引导一致性以及可访问性细节上。综合评分为 <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>。</p>
-                                    <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">综合评分</h2>
-                                    <h3 className="text-base font-bold text-gray-700 mb-4">总体评分：78/100</h3>
-                                    <p className="text-[14px] text-gray-600 leading-relaxed mb-6">界面视觉基础良好，遵循了简约清晰的设计原则。色彩方案和布局结构表现出色，但在细节一致性、留白节奏和可访问性方面存在明确的优化空间，提升后将显著增强专业感和易用性。</p>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4 mt-8">{isEnglish ? 'Executive summary' : '执行摘要'}</h2>
+                                    <h3 className="text-base font-bold text-gray-700 mb-2">{isEnglish ? 'Scope & inputs' : '评审范围与输入'}</h3>
+                                    <p className="text-[14px] text-gray-600 leading-relaxed mb-6">
+                                        {isEnglish
+                                            ? 'This review is based on the provided AI tool web UI screenshots. The page is identified as the Prodes AI home, including top navigation, the central interaction area (assistant greeting, prompt input, quick actions), and the featured examples section. The review focuses on visual consistency and usability.'
+                                            : '本次评审基于提供的AI辅助工具网页界面截图进行。通过识图分析，界面被识别为"墨刀AI"平台的首页，包含顶部导航、中部主交互区（智能体问候、功能输入框、快捷功能入口）以及底部的精选案例展示区。评审聚焦于视觉规范与用户体验的五维度分析。'}
+                                    </p>
+                                    <h3 className="text-base font-bold text-gray-700 mb-2">{isEnglish ? 'Key findings' : '核心结论'}</h3>
+                                    <p className="text-[14px] text-gray-600 leading-relaxed mb-8">
+                                        {isEnglish
+                                            ? <>Overall the UI is modern and clean with clear hierarchy and focus. Key strengths include structured layout and tech-accent color usage. Main opportunities are spacing in the bottom area, consistency of visual cues, and accessibility details. Overall score: <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>.</>
+                                            : <>界面整体呈现现代简约的扁平化设计风格，视觉层级清晰，核心交互区聚焦。主要亮点在于清晰的布局结构和科技感的色彩点缀。优化空间主要集中在底部区域留白、辅助功能的视觉引导一致性以及可访问性细节上。综合评分为 <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>。</>}
+                                    </p>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">{isEnglish ? 'Overall score' : '综合评分'}</h2>
+                                    <h3 className="text-base font-bold text-gray-700 mb-4">{isEnglish ? 'Total: 78/100' : '总体评分：78/100'}</h3>
+                                    <p className="text-[14px] text-gray-600 leading-relaxed mb-6">
+                                        {isEnglish
+                                            ? 'The visual foundation is solid, with a simple and clear design. The palette and layout work well, but there is clear room to improve detail consistency, spacing rhythm, and accessibility. Addressing these will significantly increase perceived quality and usability.'
+                                            : '界面视觉基础良好，遵循了简约清晰的设计原则。色彩方案和布局结构表现出色，但在细节一致性、留白节奏和可访问性方面存在明确的优化空间，提升后将显著增强专业感和易用性。'}
+                                    </p>
                                 </div>
                             </ScrollArea>
                         </div>
@@ -1197,7 +1226,7 @@ export function ChatPage() {
                         (() => {
                             const docSessionId = activeMessage.replace('document_', '');
                             const docSession = sessions.find(s => s.id === docSessionId);
-                            const docTitle = docSession ? docSession.prompt.slice(0, 16) + ' 设计评审' : '设计评审文档';
+                            const docTitle = docSession ? `${docSession.prompt.slice(0, 16)} ${tr('设计评审')}` : tr('设计评审文档');
                             return (
                                 <div className="flex-1 bg-white relative flex flex-col h-full">
                                     {/* Doc Top Bar */}
@@ -1214,25 +1243,25 @@ export function ChatPage() {
                                             {/* 分享按钮 (图2样式) */}
                                             <button className="h-8 px-4 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[12px] transition active:scale-95">
                                                 <Share size={14} strokeWidth={2.5} />
-                                                <span>分享</span>
+                                                <span>{tr('分享')}</span>
                                             </button>
                                             {/* 复制按钮 (图2样式) */}
-                                            <button title="复制" className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
+                                            <button title={tr('复制')} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
                                                 <Copy size={14} strokeWidth={2.5} />
                                             </button>
                                             {/* 下载按钮 (图2样式) */}
-                                            <button title="下载" className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
+                                            <button title={tr('下载')} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
                                                 <Download size={14} strokeWidth={2.5} />
                                             </button>
                                             
                                             <div className="w-px h-4 bg-gray-200 mx-1" />
                                             
                                             {/* 全屏和关闭 (极简样式) */}
-                                            <button title="全屏" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition active:scale-95">
+                                            <button title={tr('全屏')} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition active:scale-95">
                                                 <Maximize2 size={15} strokeWidth={2} />
                                             </button>
                                             <button
-                                                title="关闭"
+                                                title={tr('关闭')}
                                                 onClick={() => setActiveMessage(docSessionId)}
                                                 className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition active:scale-95"
                                             >
@@ -1243,39 +1272,63 @@ export function ChatPage() {
                                     {/* Doc Body */}
                                     <ScrollArea className="flex-1 bg-white">
                                         <div className="max-w-3xl mx-auto px-12 py-10">
-                                            <h1 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">墨刀AI平台UI设计规范评审报告</h1>
+                                            <h1 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">
+                                                {isEnglish ? 'Prodes AI UI specification review' : '墨刀AI平台UI设计规范评审报告'}
+                                            </h1>
                                             <div className="text-sm font-medium text-gray-400 mb-8 pb-8 border-b border-gray-100">
-                                                UI Specification &amp; Visual Design Review &nbsp;·&nbsp; 评审日期：2026年02月26日
+                                                UI Specification &amp; Visual Design Review &nbsp;·&nbsp; {isEnglish ? 'Review date: 2026-02-26' : '评审日期：2026年02月26日'}
                                             </div>
 
-                                            <h2 className="text-lg font-bold text-gray-800 mb-4 mt-8">执行摘要</h2>
-                                            <h3 className="text-sm font-bold text-gray-700 mb-2">评审范围与输入</h3>
-                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-6">本次评审基于提供的AI辅助工具网页界面截图进行。通过识图分析，界面被识别为"墨刀AI"平台的首页，包含顶部导航、中部主交互区（智能体问候、功能输入框、快捷功能入口）以及底部的精选案例展示区。评审聚焦于视觉规范与用户体验的五维度分析。</p>
-                                            <h3 className="text-sm font-bold text-gray-700 mb-2">核心结论</h3>
-                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-8">界面整体呈现现代简约的扁平化设计风格，视觉层级清晰，核心交互区聚焦。主要亮点在于清晰的布局结构和科技感的色彩点缀。优化空间主要集中在底部区域留白、辅助功能的视觉引导一致性以及可访问性细节上。综合评分为 <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>。</p>
+                                            <h2 className="text-lg font-bold text-gray-800 mb-4 mt-8">{isEnglish ? 'Executive summary' : '执行摘要'}</h2>
+                                            <h3 className="text-sm font-bold text-gray-700 mb-2">{isEnglish ? 'Scope & inputs' : '评审范围与输入'}</h3>
+                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-6">
+                                                {isEnglish
+                                                    ? 'This review is based on the provided AI tool web UI screenshots. The page is identified as the Prodes AI home, including top navigation, the central interaction area (assistant greeting, prompt input, quick actions), and the featured examples section. The review focuses on visual consistency and usability.'
+                                                    : '本次评审基于提供的AI辅助工具网页界面截图进行。通过识图分析，界面被识别为"墨刀AI"平台的首页，包含顶部导航、中部主交互区（智能体问候、功能输入框、快捷功能入口）以及底部的精选案例展示区。评审聚焦于视觉规范与用户体验的五维度分析。'}
+                                            </p>
+                                            <h3 className="text-sm font-bold text-gray-700 mb-2">{isEnglish ? 'Key findings' : '核心结论'}</h3>
+                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-8">
+                                                {isEnglish
+                                                    ? <>Overall the UI is modern and clean with clear hierarchy and focus. Key strengths include structured layout and tech-accent color usage. Main opportunities are spacing in the bottom area, consistency of visual cues, and accessibility details. Overall score: <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>.</>
+                                                    : <>界面整体呈现现代简约的扁平化设计风格，视觉层级清晰，核心交互区聚焦。主要亮点在于清晰的布局结构和科技感的色彩点缀。优化空间主要集中在底部区域留白、辅助功能的视觉引导一致性以及可访问性细节上。综合评分为 <strong className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">78/100</strong>。</>}
+                                            </p>
 
-                                            <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">综合评分</h2>
-                                            <h3 className="text-sm font-bold text-gray-700 mb-2">总体评分：78/100</h3>
-                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-6">界面视觉基础良好，遵循了简约清晰的设计原则。色彩方案和布局结构表现出色，但在细节一致性、留白节奏和可访问性方面存在明确的优化空间，提升后将显著增强专业感和易用性。</p>
+                                            <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">{isEnglish ? 'Overall score' : '综合评分'}</h2>
+                                            <h3 className="text-sm font-bold text-gray-700 mb-2">{isEnglish ? 'Total: 78/100' : '总体评分：78/100'}</h3>
+                                            <p className="text-[14px] text-gray-600 leading-relaxed mb-6">
+                                                {isEnglish
+                                                    ? 'The visual foundation is solid, with a simple and clear design. The palette and layout work well, but there is clear room to improve detail consistency, spacing rhythm, and accessibility. Addressing these will significantly increase perceived quality and usability.'
+                                                    : '界面视觉基础良好，遵循了简约清晰的设计原则。色彩方案和布局结构表现出色，但在细节一致性、留白节奏和可访问性方面存在明确的优化空间，提升后将显著增强专业感和易用性。'}
+                                            </p>
 
                                             <div className="overflow-x-auto mb-8">
                                                 <table className="w-full text-[13px] border-collapse">
                                                     <thead>
                                                         <tr className="bg-gray-50">
-                                                            <th className="text-left px-4 py-3 font-bold text-gray-700 border border-gray-100 rounded-tl-lg">评审维度</th>
-                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">评分(0-100)</th>
-                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">权重</th>
-                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">加权得分</th>
-                                                            <th className="text-left px-4 py-3 font-bold text-gray-700 border border-gray-100 rounded-tr-lg">简要说明</th>
+                                                            <th className="text-left px-4 py-3 font-bold text-gray-700 border border-gray-100 rounded-tl-lg">{isEnglish ? 'Dimension' : '评审维度'}</th>
+                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">{isEnglish ? 'Score (0-100)' : '评分(0-100)'}</th>
+                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">{isEnglish ? 'Weight' : '权重'}</th>
+                                                            <th className="text-center px-4 py-3 font-bold text-gray-700 border border-gray-100">{isEnglish ? 'Weighted' : '加权得分'}</th>
+                                                            <th className="text-left px-4 py-3 font-bold text-gray-700 border border-gray-100 rounded-tr-lg">{isEnglish ? 'Notes' : '简要说明'}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {[
-                                                            { dim: '视觉一致性', score: 75, weight: '25%', weighted: 18.75, note: '色彩、字体基本统一，局部控件差异较大' },
-                                                            { dim: '布局与留白', score: 72, weight: '20%', weighted: 14.4, note: '底部内容区域偏拥挤，整体节奏待改善' },
-                                                            { dim: '色彩美学', score: 85, weight: '20%', weighted: 17.0, note: '主色调清晰，渐变点缀科技感强' },
-                                                            { dim: '排版层级', score: 80, weight: '20%', weighted: 16.0, note: '标题与正文层级清晰，小字可读性略低' },
-                                                            { dim: '可访问性', score: 62, weight: '15%', weighted: 9.3, note: '对比度不足，缺少焦点指示器' },
+                                                            isEnglish
+                                                                ? { dim: 'Visual consistency', score: 75, weight: '25%', weighted: 18.75, note: 'Colors and typography are mostly consistent; some components vary.' }
+                                                                : { dim: '视觉一致性', score: 75, weight: '25%', weighted: 18.75, note: '色彩、字体基本统一，局部控件差异较大' },
+                                                            isEnglish
+                                                                ? { dim: 'Layout & spacing', score: 72, weight: '20%', weighted: 14.4, note: 'Bottom section feels crowded; spacing rhythm can improve.' }
+                                                                : { dim: '布局与留白', score: 72, weight: '20%', weighted: 14.4, note: '底部内容区域偏拥挤，整体节奏待改善' },
+                                                            isEnglish
+                                                                ? { dim: 'Color aesthetics', score: 85, weight: '20%', weighted: 17.0, note: 'Primary palette is clear; gradients add a tech feel.' }
+                                                                : { dim: '色彩美学', score: 85, weight: '20%', weighted: 17.0, note: '主色调清晰，渐变点缀科技感强' },
+                                                            isEnglish
+                                                                ? { dim: 'Typographic hierarchy', score: 80, weight: '20%', weighted: 16.0, note: 'Headings and body are clear; small text readability is slightly low.' }
+                                                                : { dim: '排版层级', score: 80, weight: '20%', weighted: 16.0, note: '标题与正文层级清晰，小字可读性略低' },
+                                                            isEnglish
+                                                                ? { dim: 'Accessibility', score: 62, weight: '15%', weighted: 9.3, note: 'Contrast is insufficient; missing focus indicators.' }
+                                                                : { dim: '可访问性', score: 62, weight: '15%', weighted: 9.3, note: '对比度不足，缺少焦点指示器' },
                                                         ].map((row, i) => (
                                                             <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                                                                 <td className="px-4 py-3 border border-gray-100 font-medium text-gray-700">{row.dim}</td>
@@ -1289,12 +1342,18 @@ export function ChatPage() {
                                                 </table>
                                             </div>
 
-                                            <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">优化建议优先级</h2>
+                                            <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 mt-10">{isEnglish ? 'Recommendation priority' : '优化建议优先级'}</h2>
                                             <div className="space-y-3 mb-8">
                                                 {[
-                                                    { level: 'P0', color: 'bg-red-100 text-red-600', label: '立即优化', text: '底部区域内容间距过小，需增大 padding 至少 16px，避免视觉拥挤。' },
-                                                    { level: 'P1', color: 'bg-amber-100 text-amber-600', label: '近期优化', text: '可访问性对比度问题：灰色辅助文字需调整至 WCAG AA 标准（至少 4.5:1）。' },
-                                                    { level: 'P2', color: 'bg-blue-100 text-blue-600', label: '中期规划', text: '统一所有卡片组件的圆角半径为 12px，保持全局一致性。' },
+                                                    isEnglish
+                                                        ? { level: 'P0', color: 'bg-red-100 text-red-600', label: 'Fix now', text: 'Bottom area is cramped. Increase padding to at least 16px to reduce visual crowding.' }
+                                                        : { level: 'P0', color: 'bg-red-100 text-red-600', label: '立即优化', text: '底部区域内容间距过小，需增大 padding 至少 16px，避免视觉拥挤。' },
+                                                    isEnglish
+                                                        ? { level: 'P1', color: 'bg-amber-100 text-amber-600', label: 'Fix soon', text: 'Accessibility contrast: adjust secondary gray text to meet WCAG AA (≥ 4.5:1).' }
+                                                        : { level: 'P1', color: 'bg-amber-100 text-amber-600', label: '近期优化', text: '可访问性对比度问题：灰色辅助文字需调整至 WCAG AA 标准（至少 4.5:1）。' },
+                                                    isEnglish
+                                                        ? { level: 'P2', color: 'bg-blue-100 text-blue-600', label: 'Plan later', text: 'Unify card corner radius to 12px for consistent global styling.' }
+                                                        : { level: 'P2', color: 'bg-blue-100 text-blue-600', label: '中期规划', text: '统一所有卡片组件的圆角半径为 12px，保持全局一致性。' },
                                                 ].map((item, i) => (
                                                     <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
                                                         <span className={`shrink-0 text-[11px] font-black px-2 py-0.5 rounded-md ${item.color}`}>{item.level}</span>
@@ -1325,11 +1384,11 @@ export function ChatPage() {
                                                     : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
                                             )}>
                                             <Image size={14} />
-                                            {activeTab === 'preview' && <span>预览</span>}
+                                            {activeTab === 'preview' && <span>{tr('预览')}</span>}
                                         </button>
                                         {activeTab !== 'preview' && (
                                             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/tab:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                                                预览
+                                                {tr('预览')}
                                             </div>
                                         )}
                                     </div>
@@ -1344,11 +1403,11 @@ export function ChatPage() {
                                                     : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
                                             )}>
                                             <Edit3 size={14} />
-                                            {activeTab === 'edit' && <span>编辑</span>}
+                                            {activeTab === 'edit' && <span>{tr('编辑')}</span>}
                                         </button>
                                         {activeTab !== 'edit' && (
                                             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/tab:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                                                编辑
+                                                {tr('编辑')}
                                             </div>
                                         )}
                                     </div>
@@ -1363,11 +1422,11 @@ export function ChatPage() {
                                                     : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
                                             )}>
                                             <FileText size={14} />
-                                            {activeTab === 'code' && <span>代码</span>}
+                                            {activeTab === 'code' && <span>{tr('代码')}</span>}
                                         </button>
                                         {activeTab !== 'code' && (
                                             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/tab:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                                                代码
+                                                {tr('代码')}
                                             </div>
                                         )}
                                     </div>
@@ -1380,7 +1439,7 @@ export function ChatPage() {
                                                 : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
                                         )}>
                                         <Settings size={14} />
-                                        {activeTab === 'config' && <span>配置</span>}
+                                        {activeTab === 'config' && <span>{tr('配置')}</span>}
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('analytics')}
@@ -1391,7 +1450,7 @@ export function ChatPage() {
                                                 : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
                                         )}>
                                         <BarChart3 size={14} />
-                                        {activeTab === 'analytics' && <span>分析</span>}
+                                        {activeTab === 'analytics' && <span>{tr('分析')}</span>}
                                     </button>
 
                                     <div className="relative" ref={versionMenuRef}>
@@ -1410,11 +1469,11 @@ export function ChatPage() {
                                         </button>
                                         {showVersionMenu && (
                                             <div className="absolute top-full left-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 w-[130px] animate-in fade-in slide-in-from-top-1 duration-150">
-                                                <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">历史版本</div>
+                                                <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">{tr('历史版本')}</div>
                                                 {[
                                                     { v: 'V3', time: '刚刚' },
-                                                    { v: 'V2', time: '2小时前' },
-                                                    { v: 'V1', time: '昨天' },
+                                                    { v: 'V2', time: isEnglish ? '2 hr ago' : '2小时前' },
+                                                    { v: 'V1', time: isEnglish ? 'Yesterday' : '昨天' },
                                                 ].map(item => (
                                                     <button
                                                         key={item.v}
@@ -1438,7 +1497,7 @@ export function ChatPage() {
 
                                 <div className="flex items-center gap-1.5 ml-auto shrink-0">
                                     <button className="h-8 px-4 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/50 text-indigo-700 font-bold text-[12px] transition shrink-0 hover:bg-indigo-100 active:scale-95 shadow-sm shadow-indigo-100/50 whitespace-nowrap">
-                                        <Share2 size={13} strokeWidth={2.5} className="text-indigo-500" /> 导出至墨刀
+                                        <Share2 size={13} strokeWidth={2.5} className="text-indigo-500" /> {tr('导出至墨刀')}
                                     </button>
 
                                     {/* 分享按钮 + 下拉面板 */}
@@ -1457,7 +1516,7 @@ export function ChatPage() {
                                                 setShowVersionMenu(false);
                                             }}
                                         >
-                                            <Share size={13} strokeWidth={2.5} className="text-slate-600" /> 分享
+                                            <Share size={13} strokeWidth={2.5} className="text-slate-600" /> {tr('分享')}
                                         </Button>
                                         {showSharePanel && shareDropdown}
                                     </div>
@@ -1474,7 +1533,7 @@ export function ChatPage() {
                                             }}
                                             className="bg-black hover:bg-slate-800 text-white rounded-lg h-8 px-5 text-[12px] font-black shadow-md shadow-black/10 transition active:scale-95 border border-white/5 whitespace-nowrap"
                                         >
-                                            发布
+                                            {tr('发布')}
                                         </Button>
                                         {showPublishModal && publishDropdown}
                                     </div>
@@ -1482,11 +1541,11 @@ export function ChatPage() {
                                     <div className="flex items-center ml-1 pl-2 gap-0.5">
                                         <div className="relative group flex justify-center">
                                             <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-900 hover:text-white transition text-slate-700 active:scale-95"><Maximize2 size={15} strokeWidth={2.25} /></button>
-                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">全屏</div>
+                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('全屏')}</div>
                                         </div>
                                         <div className="relative group flex justify-center">
                                             <button onClick={() => { }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 hover:text-red-600 transition text-slate-700 active:scale-95"><X size={16} strokeWidth={2.5} /></button>
-                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">关闭</div>
+                                            <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('关闭')}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1505,7 +1564,7 @@ export function ChatPage() {
                                         return (
                                             <div className="w-[180px] bg-[#FAFAFA] flex flex-col shrink-0 order-0 border-r border-slate-100">
                                                 <div className="h-14 flex items-center px-5 border-b border-slate-100">
-                                                    <div className="text-[12px] font-black text-slate-900 tracking-wider uppercase">设置类别</div>
+                                                    <div className="text-[12px] font-black text-slate-900 tracking-wider uppercase">{tr('设置类别')}</div>
                                                 </div>
                                                 <ScrollArea className="flex-1">
                                                     <div className="p-2 space-y-0.5">
@@ -1535,12 +1594,12 @@ export function ChatPage() {
                                     return (
                                         <div className="w-[180px] bg-[#FAFAFA] flex flex-col shrink-0 transition-all duration-300 order-0 border-r border-slate-100">
                                             <div className="h-14 flex items-center justify-between px-5 border-b border-slate-100">
-                                                <div className="text-[12px] font-black text-slate-900 tracking-wider">目录</div>
+                                                <div className="text-[12px] font-black text-slate-900 tracking-wider">{tr('目录')}</div>
                                                 {/* 收起箭头 ← 图2样式 */}
                                                 <button
                                                     onClick={() => setIsDirOpen(false)}
                                                     className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-200 flex items-center justify-center transition-all"
-                                                    title="收起目录"
+                                                    title={tr('收起目录')}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                                                 </button>
@@ -1578,7 +1637,7 @@ export function ChatPage() {
                                                             className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 text-[12px] font-bold transition-all active:scale-95 shrink-0 shadow-sm"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                                                            目录
+                                                            {tr('目录')}
                                                         </button>
                                                     );
                                                 }
@@ -1594,29 +1653,41 @@ export function ChatPage() {
                                             {activeTab !== 'code' && (
                                                 <>
                                                     <div className="flex items-center gap-2 text-slate-600 shrink-0">
-                                                        <div className="relative group">
-                                                            <button onClick={() => { setShowScreenshotMode(true); setComments([]); }} className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-900 hover:text-white bg-white border border-slate-200 text-slate-600 shadow-sm transition-all active:scale-90 cursor-pointer">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
-                                                            </button>
-                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">截图优化</div>
-                                                        </div>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button onClick={() => { setShowScreenshotMode(true); setComments([]); }} className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-900 hover:text-white bg-white border border-slate-200 text-slate-600 shadow-sm transition-all active:scale-90 cursor-pointer">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="bottom" className="bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md border-transparent">
+                                                                {tr('截图优化')}
+                                                            </TooltipContent>
+                                                        </Tooltip>
                                                     </div>
-                                                    <div className="flex-1 max-w-[200px] mx-auto flex">
+                                                    <div className="flex-1 max-w-[280px] min-w-[220px] mx-auto flex">
                                                         <div className="w-full bg-slate-100/50 border border-slate-200 hover:border-slate-300 transition-colors rounded-full h-8 flex items-center justify-between text-[11px] text-slate-600 font-bold px-2 shadow-inner">
                                                             {/* 设备切换下拉 */}
-                                                            <div className="relative" ref={deviceMenuRef}>
+                                                            <div className="relative group/device" ref={deviceMenuRef}>
                                                                 <button
-                                                                    onClick={() => setShowDeviceMenu(v => !v)}
+                                                                    onClick={() => {
+                                                                        setShowPageMenu(false);
+                                                                        setShowDeviceMenu(v => !v);
+                                                                    }}
                                                                     className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800 transition flex items-center gap-0.5"
-                                                                    title="切换演示设备"
                                                                 >
                                                                     {deviceMode === 'mobile' && <Smartphone size={13} />}
                                                                     {deviceMode === 'pad' && <Tablet size={13} />}
                                                                     {deviceMode === 'pc' && <Monitor size={13} />}
                                                                     <ChevronDown size={9} className="text-slate-400" />
                                                                 </button>
+                                                                {!showDeviceMenu && (
+                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover/device:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                                                                        {tr('切换演示设备')}
+                                                                    </div>
+                                                                )}
                                                                 {showDeviceMenu && (
                                                                     <div className="absolute top-full left-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 w-[120px] animate-in fade-in slide-in-from-top-1 duration-150">
+                                                                        {/* PC 端 */}
                                                                         <button
                                                                             onClick={() => { setDeviceMode('pc'); setShowDeviceMenu(false); }}
                                                                             className={cn(
@@ -1625,20 +1696,10 @@ export function ChatPage() {
                                                                             )}
                                                                         >
                                                                             <Monitor size={13} />
-                                                                            PC 端
+                                                                            {tr('PC 端')}
                                                                             {deviceMode === 'pc' && <Check size={11} className="ml-auto text-indigo-500" />}
                                                                         </button>
-                                                                        <button
-                                                                            onClick={() => { setDeviceMode('pad'); setShowDeviceMenu(false); }}
-                                                                            className={cn(
-                                                                                "w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition hover:bg-slate-50",
-                                                                                deviceMode === 'pad' ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
-                                                                            )}
-                                                                        >
-                                                                            <Tablet size={13} />
-                                                                            Pad 端
-                                                                            {deviceMode === 'pad' && <Check size={11} className="ml-auto text-indigo-500" />}
-                                                                        </button>
+                                                                        {/* 移动端 */}
                                                                         <button
                                                                             onClick={() => { setDeviceMode('mobile'); setShowDeviceMenu(false); }}
                                                                             className={cn(
@@ -1647,119 +1708,249 @@ export function ChatPage() {
                                                                             )}
                                                                         >
                                                                             <Smartphone size={13} />
-                                                                            移动端
+                                                                            {tr('移动端')}
                                                                             {deviceMode === 'mobile' && <Check size={11} className="ml-auto text-indigo-500" />}
+                                                                        </button>
+                                                                        {/* Pad 端 */}
+                                                                        <button
+                                                                            onClick={() => { setDeviceMode('pad'); setShowDeviceMenu(false); }}
+                                                                            className={cn(
+                                                                                "w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition hover:bg-slate-50",
+                                                                                deviceMode === 'pad' ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
+                                                                            )}
+                                                                        >
+                                                                            <Tablet size={13} />
+                                                                            {tr('Pad 端')}
+                                                                            {deviceMode === 'pad' && <Check size={11} className="ml-auto text-indigo-500" />}
                                                                         </button>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                             <div className="w-px h-3.5 bg-slate-200 mx-1" />
                                                             <div className="relative group/address flex-1 flex">
-                                                                <DropdownMenu>
+                                                                <DropdownMenu
+                                                                    open={showPageMenu}
+                                                                    modal={false}
+                                                                    onOpenChange={(v) => {
+                                                                        setShowPageMenu(v);
+                                                                        if (v) setShowDeviceMenu(false);
+                                                                    }}
+                                                                >
                                                                     <DropdownMenuTrigger asChild>
-                                                                        <button className="flex-1 truncate text-left hover:bg-slate-200 px-1.5 py-1 rounded transition text-slate-600 font-mono w-[110px] items-center block">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setShowDeviceMenu(false);
+                                                                                setShowPageMenu(v => !v);
+                                                                            }}
+                                                                            className="flex-1 truncate text-left hover:bg-slate-200 px-1.5 py-1 rounded transition text-slate-600 font-mono w-[110px] items-center block"
+                                                                        >
                                                                             /home/{activeFile}
                                                                         </button>
                                                                     </DropdownMenuTrigger>
                                                                     <DropdownMenuContent align="start" className="w-[180px]">
-                                                                        {['index.html', 'cart.html', 'detail.html', 'profile.html'].map(f => (
-                                                                            <DropdownMenuItem key={f} onClick={() => setActiveFile(f)} className="text-[12px] font-mono cursor-pointer">
-                                                                                /home/{f}
-                                                                            </DropdownMenuItem>
-                                                                        ))}
+                                                                        {(() => {
+                                                                            const current = sessions.find(s => s.id === activeMessage);
+                                                                            const files = current?.selectedFileType === 'single'
+                                                                                ? [activeFile]
+                                                                                : ['index.html', 'cart.html', 'detail.html', 'profile.html'];
+                                                                            return files.map(f => (
+                                                                                <DropdownMenuItem key={f} onClick={() => setActiveFile(f)} className="text-[12px] font-mono cursor-pointer">
+                                                                                    /home/{f}
+                                                                                </DropdownMenuItem>
+                                                                            ));
+                                                                        })()}
                                                                     </DropdownMenuContent>
                                                                 </DropdownMenu>
                                                                 <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/address:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                                                                    切换页面
+                                                                    {tr('切换页面')}
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-1 shrink-0 ml-1">
                                                                 <div className="relative group flex justify-center">
                                                                     <button className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-800 transition"><RotateCw size={12} strokeWidth={2.5}/></button>
-                                                                    <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-50 pointer-events-none">刷新</div>
+                                                                    <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-50 pointer-events-none">{tr('刷新')}</div>
                                                                 </div>
                                                                 <div className="relative group flex justify-center">
                                                                     <button className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-800 transition"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg></button>
-                                                                    <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-50 pointer-events-none">新窗口打开</div>
+                                                                    <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-50 pointer-events-none">{tr('新窗口打开')}</div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </>
                                             )}
-                                            <div className="absolute right-4 flex text-slate-600 gap-1.5">
-                                                {/* 编辑模式独有图标群组 */}
-                                                {activeTab === 'edit' ? (
-                                                    <>
-                                                        {/* 云端保存状态 */}
-                                                        <div className="relative group flex justify-center items-center mr-1">
-                                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg border-transparent transition text-slate-700 relative">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
-                                                                <div className="absolute right-0 bottom-1.5 w-2 h-2 rounded-full bg-emerald-500 border border-white"></div>
-                                                            </div>
-                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">已保存至云端</div>
-                                                        </div>
-                                                        {/* 撤销 */}
-                                                        <div className="relative group flex justify-center">
-                                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border-transparent transition text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-                                                            </button>
-                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">撤销上一步</div>
-                                                        </div>
-                                                        {/* 重做 */}
-                                                        <div className="relative group flex justify-center">
-                                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border-transparent transition text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
-                                                            </button>
-                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">重做</div>
-                                                        </div>
-                                                        {/* 下载 */}
-                                                        <div className="relative group flex justify-center ml-0.5">
-                                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Download size={14} strokeWidth={2.25} /></button>
-                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载代码</div>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        {/* 预览tab：仅保留下载资源，移除复制内容 */}
-                                                        {activeTab === 'preview' ? (
-                                                            <div className="relative group flex justify-center">
-                                                                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Download size={14} strokeWidth={2.25} /></button>
-                                                                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载代码</div>
-                                                            </div>
+                                            {(() => {
+                                                const current = sessions.find(s => s.id === activeMessage);
+                                                const isApp = current?.selectedFileType === 'app';
+                                                const isSingle = current?.selectedFileType === 'single';
+                                                const isMulti = current?.selectedFileType === 'multi';
+
+                                                return (
+                                                    <div className="absolute right-4 flex text-slate-600 gap-1.5">
+                                                        {/* 编辑模式独有图标群组 */}
+                                                        {activeTab === 'edit' ? (
+                                                            <>
+                                                                {/* 云端保存状态 */}
+                                                                <div className="relative group flex justify-center items-center mr-1">
+                                                                    <div className="w-8 h-8 flex items-center justify-center rounded-lg border-transparent transition text-slate-700 relative">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                                                                        <div className="absolute right-0 bottom-1.5 w-2 h-2 rounded-full bg-emerald-500 border border-white"></div>
+                                                                    </div>
+                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('已保存至云端')}</div>
+                                                                </div>
+                                                                {/* 撤销 */}
+                                                                <div className="relative group flex justify-center">
+                                                                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border-transparent transition text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                                                                    </button>
+                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('撤销上一步')}</div>
+                                                                </div>
+                                                                {/* 重做 */}
+                                                                <div className="relative group flex justify-center">
+                                                                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border-transparent transition text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+                                                                    </button>
+                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('重做')}</div>
+                                                                </div>
+                                                                {/* 下载：编辑多页时下拉；编辑单页/应用时直接下载 */}
+                                                                {isApp ? (
+                                                                    <div className="relative group flex justify-center ml-0.5">
+                                                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                            <Download size={14} strokeWidth={2.25} />
+                                                                        </button>
+                                                                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                    </div>
+                                                                ) : isSingle ? (
+                                                                    <div className="relative group flex justify-center ml-0.5">
+                                                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                            <Download size={14} strokeWidth={2.25} />
+                                                                        </button>
+                                                                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                    </div>
+                                                                ) : isMulti ? (
+                                                                    <div className="relative group flex justify-center ml-0.5">
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                                    <Download size={14} strokeWidth={2.25} />
+                                                                                </button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end" className="w-[150px]">
+                                                                                <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                    <Download size={13} />
+                                                                                    {tr('下载当前文件')}
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                    <Download size={13} />
+                                                                                    {tr('下载所有文件')}
+                                                                                </DropdownMenuItem>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
+                                                                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                    </div>
+                                                                ) : null}
+                                                            </>
                                                         ) : (
                                                             <>
-                                                                {/* 代码tab：保留复制+下载 */}
-                                                                <div className="relative group flex justify-center">
-                                                                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Copy size={13} strokeWidth={2.25} /></button>
-                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">复制代码</div>
-                                                                </div>
-                                                                <div className="relative group flex justify-center ml-0.5">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
+                                                                {/* 预览/代码模式右上角工具 */}
+                                                                {activeTab === 'preview' ? (
+                                                                    // 预览多页：下拉；预览单页/应用：直接下载
+                                                                    isApp ? (
+                                                                        <div className="relative group flex justify-center">
                                                                             <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
                                                                                 <Download size={14} strokeWidth={2.25} />
                                                                             </button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end" className="w-[150px]">
-                                                                            <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
-                                                                                <Download size={13} />
-                                                                                下载当前文件
-                                                                            </DropdownMenuItem>
-                                                                            <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
-                                                                                <Download size={13} />
-                                                                                下载所有文件
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载代码</div>
-                                                                </div>
+                                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                        </div>
+                                                                    ) : isSingle ? (
+                                                                        <div className="relative group flex justify-center">
+                                                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                                <Download size={14} strokeWidth={2.25} />
+                                                                            </button>
+                                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                        </div>
+                                                                    ) : isMulti ? (
+                                                                        <div className="relative group flex justify-center">
+                                                                            <DropdownMenu>
+                                                                                <DropdownMenuTrigger asChild>
+                                                                                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                                        <Download size={14} strokeWidth={2.25} />
+                                                                                    </button>
+                                                                                </DropdownMenuTrigger>
+                                                                                <DropdownMenuContent align="end" className="w-[150px]">
+                                                                                    <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                        <Download size={13} />
+                                                                                        {tr('下载当前文件')}
+                                                                                    </DropdownMenuItem>
+                                                                                    <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                        <Download size={13} />
+                                                                                        {tr('下载所有文件')}
+                                                                                    </DropdownMenuItem>
+                                                                                </DropdownMenuContent>
+                                                                            </DropdownMenu>
+                                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                        </div>
+                                                                    ) : null
+                                                                ) : (
+                                                                    <>
+                                                                        {/* 代码tab：复制 + 下载（单页：直接下载；多页/应用：下拉下载当前/所有） */}
+                                                                        <div className="relative group flex justify-center">
+                                                                            <button
+                                                                                onClick={async () => {
+                                                                                    const current = sessions.find(s => s.id === activeMessage);
+                                                                                    const code = (current?.streamingCode || current?.generatedHtml || '').trim();
+                                                                                    if (!code) return;
+                                                                                    try {
+                                                                                        await navigator.clipboard.writeText(code);
+                                                                                        showToast(tr('代码复制成功'));
+                                                                                    } catch {
+                                                                                        showToast(tr('复制失败，请重试'), 'error');
+                                                                                    }
+                                                                                }}
+                                                                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"
+                                                                            >
+                                                                                <Copy size={13} strokeWidth={2.25} />
+                                                                            </button>
+                                                                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('复制代码')}</div>
+                                                                        </div>
+
+                                                                        {isSingle ? (
+                                                                            <div className="relative group flex justify-center ml-0.5">
+                                                                                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                                    <Download size={14} strokeWidth={2.25} />
+                                                                                </button>
+                                                                                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="relative group flex justify-center ml-0.5">
+                                                                                <DropdownMenu>
+                                                                                    <DropdownMenuTrigger asChild>
+                                                                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                                            <Download size={14} strokeWidth={2.25} />
+                                                                                        </button>
+                                                                                    </DropdownMenuTrigger>
+                                                                                    <DropdownMenuContent align="end" className="w-[150px]">
+                                                                                        <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                            <Download size={13} />
+                                                                                                {tr('下载当前文件')}
+                                                                                        </DropdownMenuItem>
+                                                                                        <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                            <Download size={13} />
+                                                                                                {tr('下载所有文件')}
+                                                                                        </DropdownMenuItem>
+                                                                                    </DropdownMenuContent>
+                                                                                </DropdownMenu>
+                                                                                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">{tr('下载代码')}</div>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
                                                             </>
                                                         )}
-                                                    </>
-                                                )}
-                                                {/* 展开目录按钮已移到左侧，此处移除 */}
-                                            </div>
+                                                        {/* 展开目录按钮已移到左侧，此处移除 */}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                     {/* Content based on active tab */}
@@ -1787,13 +1978,13 @@ export function ChatPage() {
                                 <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center shrink-0">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
                                 </div>
-                                <span className="text-white text-sm font-semibold">截图优化</span>
-                                <span className="text-white text-xs bg-indigo-500/20 text-indigo-200 px-2.5 py-1 rounded-md border border-indigo-500/30">请框选要调整的区域并告诉AI如何修改</span>
+                                <span className="text-white text-sm font-semibold">{tr('截图优化')}</span>
+                                <span className="text-white text-xs bg-indigo-500/20 text-indigo-200 px-2.5 py-1 rounded-md border border-indigo-500/30">{tr('请框选要调整的区域并告诉AI如何修改')}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => {
-                                        const newImg = { id: Date.now(), label: `截图 ${capturedImages.length + 1}`, comments: comments.map(c => c.text).filter(Boolean) };
+                                        const newImg = { id: Date.now(), label: isEnglish ? `Shot ${capturedImages.length + 1}` : `截图 ${capturedImages.length + 1}`, comments: comments.map(c => c.text).filter(Boolean) };
                                         setCapturedImages(prev => [...prev, newImg]);
                                         setShowScreenshotMode(false);
                                         setComments([]);
@@ -1801,7 +1992,7 @@ export function ChatPage() {
                                     className="h-8 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition flex items-center gap-2 active:scale-95"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                                    添加到对话
+                                    {tr('添加到对话')}
                                 </button>
                                 <button onClick={() => { setShowScreenshotMode(false); setComments([]); }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/60 transition">
                                     <X size={18} />
@@ -1829,7 +2020,7 @@ export function ChatPage() {
                                         title="screenshot-preview"
                                     />
                                 ) : (
-                                    <div className="w-full h-screen flex items-center justify-center text-white/40 text-sm">暂无可预览的内容</div>
+                                    <div className="w-full h-screen flex items-center justify-center text-white/40 text-sm">{tr('暂无可预览的内容')}</div>
                                 )}
 
                                 {/* 绘制中的实时选框 */}
@@ -2025,14 +2216,14 @@ export function ChatPage() {
                         <div className="flex gap-4">
                             <AlertCircle className="w-[22px] h-[22px] text-[#faad14] shrink-0 mt-0.5" fill="currentColor" color="white" />
                             <div className="flex-1">
-                                <h3 className="text-base font-semibold text-gray-900 mb-2">确定要撤回该项目的发布吗？</h3>
-                                <p className="text-[14px] text-gray-500 mb-6">撤回后线上链接将立即失效。</p>
+                                <h3 className="text-base font-semibold text-gray-900 mb-2">{tr('确定要撤回该项目的发布吗？')}</h3>
+                                <p className="text-[14px] text-gray-500 mb-6">{tr('撤回后线上链接将立即失效。')}</p>
                                 <div className="flex justify-end gap-2">
                                     <button 
                                         onClick={() => setShowWithdrawConfirm(false)}
                                         className="px-4 py-[5px] border border-[#d9d9d9] text-gray-700 bg-white rounded-md text-[14px] hover:border-indigo-400 hover:text-indigo-500 transition-colors"
                                     >
-                                        取消
+                                        {tr('取消')}
                                     </button>
                                     <button 
                                         onClick={() => {
@@ -2044,12 +2235,12 @@ export function ChatPage() {
                                                 setIsWithdrawing(false);
                                                 setIsPublished(false);
                                                 // publishedAt and publishVersion are intentionally kept for historical display
-                                                showToast('撤回成功');
+                                                showToast(tr('撤回成功'));
                                             }, 1500);
                                         }}
                                         className="px-4 py-[5px] bg-[#1677ff] text-white rounded-md text-[14px] hover:bg-[#4096ff] transition-colors shadow-sm"
                                     >
-                                        确定
+                                        {tr('确定')}
                                     </button>
                                 </div>
                             </div>
@@ -2058,6 +2249,7 @@ export function ChatPage() {
                 </div>
             )}
         </>
+        </TooltipProvider>
     );
 }
 

@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useSidebarContext } from '@/context/SidebarContext';
+import { tr } from '@/pc-en/tr';
 
 // 图4中 Shadcn 的默认颜色主题缩略图
 const DEFAULT_THEMES = [
@@ -119,7 +120,7 @@ export function DesignSystemPage() {
                             </div>
                         </div>
                         <span className="text-[13px] font-medium text-slate-400 group-hover:text-indigo-500 transition-colors text-center">
-                            新建
+                            {tr('新建')}
                         </span>
                     </div>
                 </div>

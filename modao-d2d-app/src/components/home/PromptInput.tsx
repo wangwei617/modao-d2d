@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useSidebarContext } from '@/context/SidebarContext';
 import { AdvancedConfigurationToolbar } from './AdvancedConfigurationToolbar';
+import { tr } from '@/pc-en/tr';
 
 // 每个二级卡片对应的输入框默认提示词
 const CARD_PLACEHOLDER: Record<string, string> = {
@@ -57,12 +58,12 @@ function SubCard({ data, onClick }: { data: SubCardData; onClick: () => void }) 
             </div>
             <div>
                 <h4 className="font-bold text-gray-800 text-[14px] mb-1 group-hover:text-indigo-600 transition-colors">
-                    {data.title}{' '}
+                    {tr(data.title)}{' '}
                     {data.badge && (
                         <span className="bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text text-[10px] uppercase ml-1">{data.badge}</span>
                     )}
                 </h4>
-                <p className="text-gray-400 text-[11px] font-medium leading-relaxed">{data.desc}</p>
+                <p className="text-gray-400 text-[11px] font-medium leading-relaxed">{tr(data.desc)}</p>
             </div>
         </div>
     );
@@ -207,7 +208,7 @@ function SpeedModeBtn() {
                         <path d="M12 2a10 10 0 1 0 10 10" /><path d="M12 12V2" /><path d="m16.24 7.76 4.24-4.24" />
                     </svg>
                 )}
-                <span>{mode === 'fast' ? '极速' : '深度'}</span>
+                <span>{mode === 'fast' ? tr('极速') : tr('深度')}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="m6 9 6 6 6-6" />
                 </svg>
@@ -219,14 +220,14 @@ function SpeedModeBtn() {
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left hover:bg-gray-50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-amber-500 shrink-0"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
-                        <div><div className="font-medium text-gray-700">极速</div><div className="text-[10px] text-gray-400">快速生成</div></div>
+                        <div><div className="font-medium text-gray-700">{tr('极速')}</div><div className="text-[10px] text-gray-400">{tr('快速生成')}</div></div>
                     </button>
                     <button
                         onClick={() => { setMode('deep'); setOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left hover:bg-gray-50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-400 shrink-0"><path d="M12 2a10 10 0 1 0 10 10" /><path d="M12 12V2" /><path d="m16.24 7.76 4.24-4.24" /></svg>
-                        <div><div className="font-medium text-gray-700">深度</div><div className="text-[10px] text-gray-400">深度思考</div></div>
+                        <div><div className="font-medium text-gray-700">{tr('深度')}</div><div className="text-[10px] text-gray-400">{tr('深度思考')}</div></div>
                     </button>
                 </div>
             )}
@@ -281,8 +282,8 @@ export function PromptInput() {
     const isWebOrApp = selectedTag === '生成 Web 应用' || selectedTag === '生成 App 应用';
     const cards = TAB_CARDS_MAP[activeTab] ?? [];
     const contextualPlaceholder = selectedTag
-        ? (CARD_PLACEHOLDER[selectedTag] ?? `请描述「${selectedTag}」相关需求...`)
-        : '请输入任何产品领域的需求或问题...';
+        ? tr(CARD_PLACEHOLDER[selectedTag] ?? `请描述「${selectedTag}」相关需求...`)
+        : tr('请输入任何产品领域的需求或问题...');
 
     return (
         <div className="w-full max-w-[1000px] mx-auto">
@@ -294,7 +295,7 @@ export function PromptInput() {
                             onClick={clearTag}
                             className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[13px] font-medium border border-indigo-100 h-8 select-none flex-shrink-0 cursor-pointer hover:bg-indigo-100 transition-colors group/tag"
                         >
-                            {selectedTag}
+                            {tr(selectedTag)}
                             <div
                                 className="flex items-center justify-center w-4 h-4 rounded-full group-hover/tag:bg-indigo-200 transition-colors text-indigo-400 group-hover/tag:text-indigo-700"
                             >
@@ -379,7 +380,7 @@ export function PromptInput() {
                             className="tab-label text-[12px] font-medium whitespace-nowrap transition-colors"
                             style={{ color: activeTab === tab.id ? tab.color : '#6b7280' }}
                         >
-                            {tab.label}
+                            {tr(tab.label)}
                         </span>
                     </button>
                 ))}

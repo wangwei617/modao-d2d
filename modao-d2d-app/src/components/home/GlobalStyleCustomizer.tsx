@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, Save, Plus, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { tr } from '@/pc-en/tr';
 
 interface GlobalStyleCustomizerProps {
     designSystem: any;
@@ -146,7 +147,7 @@ export function GlobalStyleCustomizer({ onClose, onSave }: GlobalStyleCustomizer
                                             className="flex items-center gap-1 text-slate-800 font-medium hover:bg-slate-50 px-2 py-1 rounded"
                                             onClick={() => setShowPreviewDropdown(!showPreviewDropdown)}
                                         >
-                                            {previewType === 'WORKBENCH' ? '工作台' : previewType} <ChevronLeft className="-rotate-90" size={14} />
+                                            {previewType === 'WORKBENCH' ? tr('工作台') : previewType} <ChevronLeft className="-rotate-90" size={14} />
                                         </button>
 
                                         {showPreviewDropdown && (
@@ -162,7 +163,7 @@ export function GlobalStyleCustomizer({ onClose, onSave }: GlobalStyleCustomizer
                                                 <button
                                                     className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 text-slate-700"
                                                     onClick={() => { setPreviewType('WORKBENCH'); setShowPreviewDropdown(false); }}
-                                                >工作台</button>
+                                                >{tr('工作台')}</button>
                                             </div>
                                         )}
                                     </div>
