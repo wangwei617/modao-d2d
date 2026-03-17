@@ -100,7 +100,7 @@ export function MobileHome({ onSend }: { onSend: (prompt: string) => void }) {
                                 Shadcn UI
                             </span>
                             <span className="bg-rose-50 text-rose-600 text-[11px] font-semibold px-3 py-1 rounded-full whitespace-nowrap">
-                                智能推荐
+                                自动
                             </span>
                         </div>
                     </div>

@@ -82,20 +82,21 @@ interface Theme {
 }
 
 const SHADCN_THEMES: Theme[] = [
-    { id: 'auto', name: '智能推荐', colors: ['#f97316', '#ec4899', '#6366f1'] },
-    { id: 'airy-blue', name: '科技蓝', colors: ['#3b82f6', '#93c5fd'] },
-    { id: 'zephyr-green', name: '护眼绿', colors: ['#10b981', '#6ee7b7'] },
-    { id: 'misty-violet', name: '梦幻紫', colors: ['#8b5cf6', '#c4b5fd'] },
-    { id: 'vintage-mocha', name: '复古拿铁', colors: ['#92400e', '#d4a574'] },
-    { id: 'sunbeam', name: '明亮黄', colors: ['#f59e0b', '#fcd34d'] },
+    { id: 'auto', name: '自动', colors: ['#f97316', '#ec4899', '#6366f1'] },
+    { id: 'blue', name: '蓝', colors: ['#3b82f6', '#93c5fd'] },
+    { id: 'green', name: '绿', colors: ['#10b981', '#6ee7b7'] },
+    { id: 'purple', name: '紫', colors: ['#8b5cf6', '#c4b5fd'] },
+    { id: 'orange', name: '橙', colors: ['#ea580c', '#fdba74'] },
+    { id: 'yellow', name: '黄', colors: ['#eab308', '#fde047'] },
 ];
 
 const PRIMARY_COLORS = [
-    { id: 'auto', gradient: 'conic-gradient(from 180deg at 50% 50%, #ff0000, #ff8000, #ffff00, #00ff00, #0000ff, #8000ff, #ff00ff, #ff0000)', label: '智能推荐' },
-    { id: 'orange', color: '#f97316', label: '活力橙' },
-    { id: 'green', color: '#22c55e', label: '护眼绿' },
-    { id: 'blue', color: '#3b82f6', label: '科技蓝' },
-    { id: 'purple', color: '#8b5cf6', label: '梦幻紫' },
+    { id: 'auto', gradient: 'conic-gradient(from 180deg at 50% 50%, #ff0000, #ff8000, #ffff00, #00ff00, #0000ff, #8000ff, #ff00ff, #ff0000)', label: '自动' },
+    { id: 'orange', color: '#f97316', label: '橙' },
+    { id: 'green', color: '#22c55e', label: '绿' },
+    { id: 'blue', color: '#3b82f6', label: '蓝' },
+    { id: 'red', color: '#ef4444', label: '红' },
+    { id: 'yellow', color: '#eab308', label: '黄' },
 ];
 
 // ---- 生成模式选项 ----
