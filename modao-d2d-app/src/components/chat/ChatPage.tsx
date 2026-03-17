@@ -53,8 +53,31 @@ export function ChatPage() {
     const versionMenuRef = useRef<HTMLDivElement>(null);
     const [isChatOpen, setIsChatOpen] = useState(true);
 
-    const [sessions, setSessions] = useState<GenerationSession[]>([]);
-    const [activeMessage, setActiveMessage] = useState<'html' | 'document' | 'terminal' | string>('html');
+    const [sessions, setSessions] = useState<GenerationSession[]>(() => {
+        try {
+            const saved = localStorage.getItem('modao_d2d_sessions');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+    const [activeMessage, setActiveMessage] = useState<'html' | 'document' | 'terminal' | string>(() => {
+        return localStorage.getItem('modao_d2d_activeMessage') || 'html';
+    });
+
+    useEffect(() => {
+        try {
+            // 只保留最近 5 个 session，防止存大段 HTML/代码导致 localStorage 爆满
+            const sessionsToSave = sessions.slice(-5);
+            localStorage.setItem('modao_d2d_sessions', JSON.stringify(sessionsToSave));
+        } catch (e) {
+            console.warn('Failed to save sessions to localStorage:', e);
+        }
+    }, [sessions]);
+
+    useEffect(() => {
+        localStorage.setItem('modao_d2d_activeMessage', activeMessage);
+    }, [activeMessage]);
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const generatingRef = useRef(false);
@@ -237,8 +260,9 @@ export function ChatPage() {
     useEffect(() => {
         if (userPrompt && userPrompt.trim()) {
             startGeneration(userPrompt);
+            setUserPrompt(''); // Clear to prevent re-triggering on mount or refresh
         }
-    }, [userPrompt, startGeneration]);
+    }, [userPrompt, startGeneration, setUserPrompt]);
 
     const handleSendMessage = () => {
         if (!inputMessage.trim() && capturedImages.length === 0) return;

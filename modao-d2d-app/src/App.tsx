@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarContext } from '@/context/SidebarContext';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Greeting } from '@/components/home/Greeting';
@@ -13,7 +13,13 @@ import { GlobalStyleCustomizer } from '@/components/home/GlobalStyleCustomizer';
 function App() {
   const [activeNav, setActiveNav] = useState('home');
   const [isCategorySelected, setIsCategorySelected] = useState(false);
-  const [viewMode, setViewMode] = useState<'home' | 'chat'>('home');
+  const [viewMode, setViewMode] = useState<'home' | 'chat'>(() => {
+    return (localStorage.getItem('modao_d2d_viewMode') as 'home' | 'chat') || 'home';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('modao_d2d_viewMode', viewMode);
+  }, [viewMode]);
   const [editingSystem, setEditingSystem] = useState<any | null>(null);
   const [customSystems, setCustomSystems] = useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
