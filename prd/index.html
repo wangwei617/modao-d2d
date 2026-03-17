@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -22,6 +22,19 @@
       --accent: #4f6ef7;
       --accent-light: #eef0ff;
       --code-bg: #f7f8fa;
+    }
+
+    /* Dark mode */
+    html[data-theme="dark"] {
+      --bg: #0b1220;
+      --surface: #0f172a;
+      --border: rgba(148,163,184,0.18);
+      --text: #e5e7eb;
+      --text-secondary: rgba(226,232,240,0.88);
+      --text-muted: rgba(226,232,240,0.62);
+      --accent: #7c7ff6;
+      --accent-light: rgba(124,127,246,0.14);
+      --code-bg: rgba(148,163,184,0.10);
     }
 
     body {
@@ -45,6 +58,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    html[data-theme="dark"] .site-header {
+      background: rgba(15, 23, 42, 0.72);
     }
 
     .header-left {
@@ -95,9 +112,17 @@
 
     /* Layout */
     .layout {
-      max-width: 860px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 48px 24px 80px;
+    }
+
+    @media (min-width: 1280px) {
+      .layout { max-width: 1320px; }
+    }
+
+    @media (min-width: 1536px) {
+      .layout { max-width: 1440px; }
     }
 
     /* Loading */
@@ -210,6 +235,8 @@
       color: #e3116c;
     }
 
+    html[data-theme="dark"] .md-body code { color: #ff79c6; }
+
     .md-body pre {
       background: #1a1d27;
       border-radius: 12px;
@@ -248,6 +275,10 @@
       border: 1px solid var(--border);
     }
 
+    /* Make wide tables readable */
+    .md-body table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .md-body th, .md-body td { white-space: nowrap; }
+
     .md-body th {
       background: #f1f3f9;
       padding: 10px 16px;
@@ -256,6 +287,8 @@
       color: var(--text);
       border-bottom: 1px solid var(--border);
     }
+
+    html[data-theme="dark"] .md-body th { background: rgba(148,163,184,0.10); }
 
     .md-body td {
       padding: 10px 16px;
@@ -266,6 +299,28 @@
     .md-body tr:last-child td { border-bottom: none; }
 
     .md-body tr:hover td { background: #fafbfd; }
+
+    html[data-theme="dark"] .md-body tr:hover td { background: rgba(148,163,184,0.06); }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.02s;
+      user-select: none;
+    }
+    .theme-toggle:hover { background: rgba(148,163,184,0.10); color: var(--text); }
+    .theme-toggle:active { transform: scale(0.98); }
 
     .md-body img {
       max-width: 100%;
@@ -309,7 +364,13 @@
       <div class="header-divider"></div>
       <span class="doc-title-header">交互说明文档</span>
     </div>
-    <span class="header-badge">PRD · 墨刀 D2D</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
+        <span id="theme-icon" aria-hidden="true">🌙</span>
+        <span id="theme-text">暗黑</span>
+      </button>
+      <span class="header-badge">PRD · 墨刀 D2D</span>
+    </div>
   </header>
 
   <div class="layout">
@@ -326,6 +387,47 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
+    // Theme: default to dark, allow toggling + persist
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('modao_prd_theme'); } catch (_) {}
+      var theme = saved || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+
+      var hljsTheme = document.getElementById('hljs-theme');
+      if (hljsTheme) {
+        hljsTheme.href = theme === 'dark'
+          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+      }
+
+      function syncToggle() {
+        var t = document.documentElement.getAttribute('data-theme') || 'dark';
+        var icon = document.getElementById('theme-icon');
+        var text = document.getElementById('theme-text');
+        if (!icon || !text) return;
+        if (t === 'dark') { icon.textContent = '🌙'; text.textContent = '暗黑'; }
+        else { icon.textContent = '☀️'; text.textContent = '亮色'; }
+      }
+
+      syncToggle();
+      var btn = document.getElementById('theme-toggle');
+      if (btn) {
+        btn.addEventListener('click', function () {
+          var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+          var next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try { localStorage.setItem('modao_prd_theme', next); } catch (_) {}
+          if (hljsTheme) {
+            hljsTheme.href = next === 'dark'
+              ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+              : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+          }
+          syncToggle();
+        });
+      }
+    })();
+
     var isLocalFile = window.location.protocol === 'file:';
     // 直接读取同目录下的 端到端 PRD.md
     var RAW_URL = isLocalFile ? '端到端%20PRD.md' : '/prd/%E7%AB%AF%E5%88%B0%E7%AB%AF%20PRD.md';
