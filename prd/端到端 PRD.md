@@ -474,7 +474,7 @@
 
 ### 4-1：移动端适配
 根据pc端的能力单独适配，优先级P2，总体原则如下：
-- 生成应用入口：做输入框顶部增加“生成应用”卡片
+- 生成应用入口：做输入框顶部增加“生成应用”卡片，位于深度模式之后
 - 选择设计系统：做，选中生成web应用或生成app应用后，输入框内增加选择设计系统的能力
 - 生成react能力：做，复用pc端能力
 - 界面布局：保持移动端现有布局现有不变
@@ -541,25 +541,33 @@
 
 ### 7-1、数据埋点
 
-以下事件用于统计 D2D「生成应用」与「发布」链路的使用量、转化、失败原因与性能表现（埋点格式对齐《工具线-新.doc》）：
+以下事件用于**精简地**统计 D2D「生成应用」与「发布」链路的使用情况，并能回答“端到端生成做得好不好”：
 
-| 功能模块 | 编号 | 事件英文名 | 事件中文名 | 事件上报时机 | 属性英文名 | 属性中文名 | 属性值类型 | 属性值示例或说明 | 埋点形式 | 截图 | 项目版本 | 指标变更日志备注 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 生成应用 | D2D-001 | `ai_d2d_prompt_submit` | 提交生成指令 | 用户点击发送或按 Enter 提交（首页/对话追问均计） | `session_id` | 会话ID | string | 生成一次请求的唯一ID（用于串联 complete/publish） | click |  |  | 核心：生成用量口径 |
-| 生成应用 | D2D-001 | `ai_d2d_prompt_submit` | 提交生成指令 | 同上 | `generation_mode` | 生成模式 | string | `web_app` / `app_app` / `other` | click |  |  | 核心：生成应用用量主维度 |
-| 生成应用 | D2D-002 | `ai_d2d_generation_complete` | 生成完成 | AI 流式输出完整结束（成功/失败都上报） | `session_id` | 会话ID | string | 同上 | show |  |  | 核心：漏斗闭环 |
-| 生成应用 | D2D-002 | `ai_d2d_generation_complete` | 生成完成 | 同上 | `result` | 结果 | string | `success` / `fail` | show |  |  | 核心：成功率 |
-| 生成应用 | D2D-002 | `ai_d2d_generation_complete` | 生成完成 | 同上 | `duration_ms` | 生成耗时 | number | 毫秒；用于 P50/P90/P99 | show |  |  | 核心：性能 |
-| 生成应用 | D2D-002 | `ai_d2d_generation_complete` | 生成完成 | 同上 | `result_type` | 结果类型 | string | `single_html` / `multi_html` / `react_app` / `document` | show |  |  | 核心：按类型拆分用量 |
-| 发布 | D2D-003 | `ai_d2d_publish_result` | 发布结果回调 | 发布/更新/撤回异步完成后回调（成功/失败都上报） | `session_id` | 会话ID | string | 同上 | show |  |  | 核心：发布用量与成功率 |
-| 发布 | D2D-003 | `ai_d2d_publish_result` | 发布结果回调 | 同上 | `action` | 操作类型 | string | `publish` / `update` / `withdraw` | show |  |  | 核心：发布/更新/撤回拆分 |
-| 发布 | D2D-003 | `ai_d2d_publish_result` | 发布结果回调 | 同上 | `result` | 结果 | string | `success` / `fail` / `cancel` | show |  |  | 核心：成功率/取消率 |
-| 发布 | D2D-003 | `ai_d2d_publish_result` | 发布结果回调 | 同上 | `fail_reason` | 失败原因 | string | `network` / `slug_invalid` / `slug_occupied` / `sensitive` / `unknown`（成功/取消可为空） | show |  |  | 核心：问题定位 |
+- **用不用**：是否有人提交生成（用量）
+- **成不成**：生成是否成功、耗时是否可接受（成功率 & 性能）
+- **交不交付**：是否最终发布成功（端到端价值闭环）
+- **截图优化有没有价值**：是否被有效使用、是否带来更高的生成成功/发布成功
+
+埋点命名与表格格式对齐你提供的规范：
+
+- **事件命名**：`MD_ai_操作对象_操作类型`（本功能为 AI 相关链路，按规范使用 `MD_ai` 前缀）
+- **操作类型**：优先使用规范表内枚举（`click` / `show` / `enter` / `set` / `add` / `delete`）
+- **公共必填属性**：`scene_tag`（必填，优先复用规范中的命名）
+- **核心串联ID**：`session_id`（必填，贯穿生成/截图优化/发布；用于漏斗与分组对比）
+
+| 功能模块 | 编号 | 埋点事件 | 事件中文名 | 事件上报时机 | 属性（同一事件下多属性用换行列出） | 截图 | 项目版本 | 指标变更日志备注 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 生成应用 | D2D-001 | `MD_ai_d2d_prompt_click` | 提交生成指令 | 用户点击发送或按 Enter 提交（首页/对话追问均计） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（必填，string）：一次生成任务的唯一ID（用于串联生成/截图优化/发布）<br>`generation_mode`（string）：`web_app` / `app_app` / `other`<br>`source`（string）：`home` / `chat` / `screenshot`（入口来源；截图优化提交为 `screenshot`） |  |  | 核心：用量（提交量）+ 截图优化贡献分组 |
+| 生成应用 | D2D-002 | `MD_ai_d2d_generation_show` | 生成完成 | AI 流式输出完整结束（成功/失败都上报） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（string）：同上<br>`result`（string）：`success` / `fail`<br>`duration_ms`（number）：毫秒（用于耗时分布）<br>`result_type`（string）：`single_html` / `multi_html` / `react_app` / `document` |  |  | 核心：漏斗闭环与按类型拆分 |
+| 发布 | D2D-003 | `MD_ai_d2d_publish_show` | 发布结果回调 | 发布/更新/撤回异步完成后回调（成功/失败都上报） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（string）：同上<br>`action`（string）：`publish` / `update` / `withdraw`<br>`result`（string）：`success` / `fail` / `cancel`<br>`fail_reason`（string）：`network` / `slug_invalid` / `slug_occupied` / `sensitive` / `unknown`（成功/取消可为空） |  |  | 核心：发布用量、成功率与失败原因定位 |
+| 截图优化 | D2D-004 | `MD_ai_d2d_screenshot_add` | 截图优化产出 | 用户在截图优化模式中点击「添加到对话」，将截图/标注带回对话输入区（以“产出”作为价值口径，避免只统计进入） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（必填，string）：同上<br>`type`（string）：`capture` / `comment` / `capture_comment`<br>`count`（number）：本次添加的截图数量（默认 1） |  |  | 核心：截图优化有效使用（有产出才算用） |
 ### 7-2、数据统计
 
-**核心看板指标**（供参考，由数据团队负责实现）：
+**核心看板指标**（供参考，由数据团队负责实现；口径清晰、可直接回答“做得好不好”）：
 
-- **生成漏斗**：`ai_d2d_prompt_submit` → `ai_d2d_generation_complete(result=success)` 转化率（可按 `generation_mode` / `result_type` 拆分）
-- **生成应用使用量**：`ai_d2d_prompt_submit`（按 `generation_mode`）与 `ai_d2d_generation_complete`（按 `result_type`）的提交量、完成量、失败率
-- **发布用量与成功率**：`ai_d2d_publish_result` 按 `action`（publish/update/withdraw）拆分统计 success/fail/cancel 与 `fail_reason` 分布
-- **性能监控**：`ai_d2d_generation_complete.duration_ms` 的 P50/P90/P99（可按 `generation_mode` / `result_type` 拆分）
+- **端到端成功率（价值闭环）**：`MD_ai_d2d_prompt_click` → `MD_ai_d2d_generation_show(result=success)` → `MD_ai_d2d_publish_show(action=publish,result=success)` 转化率
+- **生成成功率 & 失败原因**：`MD_ai_d2d_generation_show` 的 `result` 分布；如需问题定位，失败时补充 `fail_reason`（枚举与发布一致）
+- **性能监控**：`MD_ai_d2d_generation_show.duration_ms` 的 P50/P90/P99（按 `generation_mode` / `result_type` 拆分）
+- **截图优化价值评估（分组对比）**：
+  - **使用量口径**：`MD_ai_d2d_screenshot_add`（有产出才算用）
+  - **对生成/发布的提升**：对比 `MD_ai_d2d_prompt_click.source=screenshot` vs 非 screenshot 的 `generation_show(result=success)`、`publish_show(action=publish,result=success)` 转化差异
