@@ -1740,7 +1740,6 @@ export function ChatPage() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 setShowDeviceMenu(false);
-                                                                                setShowPageMenu(v => !v);
                                                                             }}
                                                                             className="flex-1 truncate text-left hover:bg-slate-200 px-1.5 py-1 rounded transition text-slate-600 font-mono w-[110px] items-center block"
                                                                         >
