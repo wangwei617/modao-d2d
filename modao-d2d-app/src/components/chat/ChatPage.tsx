@@ -1315,39 +1315,62 @@ export function ChatPage() {
                             {/* View Toolbar */}
                             <div className="h-14 border-b border-slate-50 flex items-center px-4 shrink-0 bg-white">
                                 <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => setActiveTab('preview')}
-                                        className={cn(
-                                            "flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg text-[13px] transition-all duration-200 active:scale-95 border whitespace-nowrap shrink-0",
-                                            activeTab === 'preview'
-                                                ? "bg-slate-900 text-white font-bold border-slate-900 shadow-md shadow-slate-200"
-                                                : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
-                                        )}>
-                                        <Image size={14} />
-                                        {activeTab === 'preview' && <span>预览</span>}
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('edit')}
-                                        className={cn(
-                                            "flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg text-[13px] transition-all duration-200 active:scale-95 border whitespace-nowrap shrink-0",
-                                            activeTab === 'edit'
-                                                ? "bg-slate-900 text-white font-bold border-slate-900 shadow-md shadow-slate-200"
-                                                : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
-                                        )}>
-                                        <Edit3 size={14} />
-                                        {activeTab === 'edit' && <span>编辑</span>}
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('code')}
-                                        className={cn(
-                                            "flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg text-[13px] transition-all duration-200 active:scale-95 border whitespace-nowrap shrink-0",
-                                            activeTab === 'code'
-                                                ? "bg-slate-900 text-white font-bold border-slate-900 shadow-md shadow-slate-200"
-                                                : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
-                                        )}>
-                                        <FileText size={14} />
-                                        {activeTab === 'code' && <span>代码</span>}
-                                    </button>
+                                    <div className="relative group/tab">
+                                        <button
+                                            onClick={() => setActiveTab('preview')}
+                                            className={cn(
+                                                "flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg text-[13px] transition-all duration-200 active:scale-95 border whitespace-nowrap shrink-0",
+                                                activeTab === 'preview'
+                                                    ? "bg-slate-900 text-white font-bold border-slate-900 shadow-md shadow-slate-200"
+                                                    : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
+                                            )}>
+                                            <Image size={14} />
+                                            {activeTab === 'preview' && <span>预览</span>}
+                                        </button>
+                                        {activeTab !== 'preview' && (
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/tab:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                                                预览
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="relative group/tab">
+                                        <button
+                                            onClick={() => setActiveTab('edit')}
+                                            className={cn(
+                                                "flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg text-[13px] transition-all duration-200 active:scale-95 border whitespace-nowrap shrink-0",
+                                                activeTab === 'edit'
+                                                    ? "bg-slate-900 text-white font-bold border-slate-900 shadow-md shadow-slate-200"
+                                                    : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
+                                            )}>
+                                            <Edit3 size={14} />
+                                            {activeTab === 'edit' && <span>编辑</span>}
+                                        </button>
+                                        {activeTab !== 'edit' && (
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/tab:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                                                编辑
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="relative group/tab">
+                                        <button
+                                            onClick={() => setActiveTab('code')}
+                                            className={cn(
+                                                "flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg text-[13px] transition-all duration-200 active:scale-95 border whitespace-nowrap shrink-0",
+                                                activeTab === 'code'
+                                                    ? "bg-slate-900 text-white font-bold border-slate-900 shadow-md shadow-slate-200"
+                                                    : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100 hover:text-slate-700"
+                                            )}>
+                                            <FileText size={14} />
+                                            {activeTab === 'code' && <span>代码</span>}
+                                        </button>
+                                        {activeTab !== 'code' && (
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/tab:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                                                代码
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => setActiveTab('config')}
                                         className={cn(
@@ -1631,20 +1654,25 @@ export function ChatPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-px h-3.5 bg-slate-200 mx-1" />
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <button className="flex-1 truncate text-left hover:bg-slate-200 px-1.5 py-1 rounded transition text-slate-600 font-mono w-[110px] items-center block">
-                                                                        /home/{activeFile}
-                                                                    </button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="start" className="w-[180px]">
-                                                                    {['index.html', 'cart.html', 'detail.html', 'profile.html'].map(f => (
-                                                                        <DropdownMenuItem key={f} onClick={() => setActiveFile(f)} className="text-[12px] font-mono cursor-pointer">
-                                                                            /home/{f}
-                                                                        </DropdownMenuItem>
-                                                                    ))}
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
+                                                            <div className="relative group/address flex-1 flex">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <button className="flex-1 truncate text-left hover:bg-slate-200 px-1.5 py-1 rounded transition text-slate-600 font-mono w-[110px] items-center block">
+                                                                            /home/{activeFile}
+                                                                        </button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="start" className="w-[180px]">
+                                                                        {['index.html', 'cart.html', 'detail.html', 'profile.html'].map(f => (
+                                                                            <DropdownMenuItem key={f} onClick={() => setActiveFile(f)} className="text-[12px] font-mono cursor-pointer">
+                                                                                /home/{f}
+                                                                            </DropdownMenuItem>
+                                                                        ))}
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                                <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded opacity-0 group-hover/address:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                                                                    切换页面
+                                                                </div>
+                                                            </div>
                                                             <div className="flex items-center gap-1 shrink-0 ml-1">
                                                                 <div className="relative group flex justify-center">
                                                                     <button className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-800 transition"><RotateCw size={12} strokeWidth={2.5}/></button>
@@ -1697,32 +1725,35 @@ export function ChatPage() {
                                                         {activeTab === 'preview' ? (
                                                             <div className="relative group flex justify-center">
                                                                 <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Download size={14} strokeWidth={2.25} /></button>
-                                                                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载资源</div>
+                                                                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载代码</div>
                                                             </div>
                                                         ) : (
                                                             <>
                                                                 {/* 代码tab：保留复制+下载 */}
                                                                 <div className="relative group flex justify-center">
                                                                     <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95"><Copy size={13} strokeWidth={2.25} /></button>
-                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">复制内容</div>
+                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">复制代码</div>
                                                                 </div>
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95" title="下载代码">
-                                                                            <Download size={14} strokeWidth={2.25} />
-                                                                        </button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end" className="w-[150px]">
-                                                                        <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
-                                                                            <Download size={13} />
-                                                                            下载当前文件
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
-                                                                            <Download size={13} />
-                                                                            下载所有文件
-                                                                        </DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
+                                                                <div className="relative group flex justify-center ml-0.5">
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-slate-700 active:scale-95">
+                                                                                <Download size={14} strokeWidth={2.25} />
+                                                                            </button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end" className="w-[150px]">
+                                                                            <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                <Download size={13} />
+                                                                                下载当前文件
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem className="text-[12px] cursor-pointer flex items-center gap-2">
+                                                                                <Download size={13} />
+                                                                                下载所有文件
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">下载代码</div>
+                                                                </div>
                                                             </>
                                                         )}
                                                     </>
