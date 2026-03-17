@@ -7,10 +7,21 @@ import { FeatureCards } from '@/components/home/FeatureCards';
 import { DesignSystemPage } from '@/components/home/DesignSystemPage';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { GlobalStyleCustomizer } from '@/components/home/GlobalStyleCustomizer';
+import { MobileApp } from '@/components/mobile/MobileApp';
 
 // Removed: SidebarContext definition (moved to external file)
 
 function App() {
+  const [isMobileMode, setIsMobileMode] = useState(() => window.location.hash === '#/mobile');
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setIsMobileMode(window.location.hash === '#/mobile');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const [activeNav, setActiveNav] = useState('home');
   const [isCategorySelected, setIsCategorySelected] = useState(false);
   const [viewMode, setViewMode] = useState<'home' | 'chat'>(() => {
@@ -40,6 +51,10 @@ function App() {
     }
     setEditingSystem(null);
   };
+
+  if (isMobileMode) {
+    return <MobileApp />;
+  }
 
   return (
     <SidebarContext.Provider value={{

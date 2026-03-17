@@ -52,7 +52,7 @@
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 900px;
+      max-width: 1200px;
       padding: 40px 24px;
       display: flex;
       flex-direction: column;
@@ -120,7 +120,7 @@
     /* Cards */
     .cards {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 20px;
       width: 100%;
     }
@@ -293,10 +293,10 @@
     <div class="cards">
       <!-- Card 1: Demo App -->
       <a href="/app/" class="card card-demo" target="_blank" rel="noopener" id="demo-card-link">
-        <div class="card-icon">🎨</div>
+        <div class="card-icon">💻</div>
         <div class="card-body">
-          <span class="card-tag">Interactive Demo</span>
-          <h2 class="card-title">端到端<br>Demo CN</h2>
+          <span class="card-tag">PC Demo</span>
+          <h2 class="card-title">端到端<br>PC端 Demo</h2>
           <p class="card-desc">AI 驱动的界面生成与代码导出，支持预览、编辑、代码查看及多页面管理。</p>
           <div class="tags">
             <span class="tag-chip">React</span>
@@ -311,7 +311,26 @@
         </div>
       </a>
 
-      <!-- Card 2: PRD Doc -->
+      <!-- Card 2: Mobile Demo App -->
+      <a href="/app/#/mobile" class="card card-demo" style="border-top-color: #ec4899; border-top-width: 3px;" target="_blank" rel="noopener" id="mobile-demo-card-link">
+        <div class="card-icon" style="background: rgba(236,72,153,0.1); color: #ec4899;">📱</div>
+        <div class="card-body">
+          <span class="card-tag" style="background: rgba(236,72,153,0.1); color: #f472b6; border-color: rgba(236,72,153,0.2);">Mobile Demo</span>
+          <h2 class="card-title">端到端<br>移动端 Demo</h2>
+          <p class="card-desc">独立适配的移动端体验，包含底部导航、手机版全屏预览与发布抽屉。</p>
+          <div class="tags">
+            <span class="tag-chip">Mobile UI</span>
+            <span class="tag-chip">独立页面</span>
+          </div>
+        </div>
+        <div class="card-arrow" style="color: #ec4899; opacity: 1;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+          </svg>
+        </div>
+      </a>
+
+      <!-- Card 3: PRD Doc -->
       <a href="prd/index.html" class="card card-prd" target="_blank" rel="noopener" id="prd-card-link">
         <div class="card-icon">📄</div>
         <div class="card-body">
@@ -344,9 +363,12 @@
       
       if ((hostname === '127.0.0.1' || hostname === 'localhost') && port !== '' && port !== '5174' && port !== '3000') {
         const demoLink = document.getElementById('demo-card-link');
+        const mobileLink = document.getElementById('mobile-demo-card-link');
         if (demoLink) {
-          // Vite 默认绑定到 localhost，强制使用 localhost 避免 127.0.0.1 拒绝连接的问题
           demoLink.href = 'http://localhost:5174/app/';
+        }
+        if (mobileLink) {
+          mobileLink.href = 'http://localhost:5174/app/#/mobile';
         }
       }
     });
