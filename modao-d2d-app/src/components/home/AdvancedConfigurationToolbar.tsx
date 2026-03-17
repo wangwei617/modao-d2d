@@ -319,9 +319,8 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                                     <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">主题色</div>
                                     <div className="flex justify-between items-center px-1">
                                         {PRIMARY_COLORS.map(c => (
-                                            <div key={c.id} className="relative group">
+                                            <div key={c.id} className="relative flex justify-center group/color">
                                                 <button
-                                                    title={c.label}
                                                     onClick={() => setSelectedColor(c)}
                                                     className={cn(
                                                         "w-7 h-7 rounded-full transition-all border-2",
@@ -329,7 +328,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                                                     )}
                                                     style={c.id === 'auto' ? { background: c.gradient } : { background: c.color }}
                                                 />
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                                     {c.label}
                                                 </div>
                                             </div>
