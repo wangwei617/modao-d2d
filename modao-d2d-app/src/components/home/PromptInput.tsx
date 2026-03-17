@@ -355,11 +355,10 @@ export function PromptInput() {
                         key={tab.id}
                         onClick={() => {
                             setActiveTab(tab.id);
-                            // If switching to 'generate', auto-select the first sub-card for immediate config toolbar display, 
-                            // as per PRD: "一旦用户选中某个生成应用tab，界面进入专项工作流...专有配置工具弹出"
+                            // If switching to 'generate', don't auto-select the sub-card. Just show the sub-cards.
                             // If switching away, clear the tag if it's one of the generate app tags.
                             if (tab.id === 'generate') {
-                                setSelectedTag('生成 Web 应用');
+                                setSelectedTag(null);
                             } else if (tab.id !== 'generate' && (selectedTag === '生成 Web 应用' || selectedTag === '生成 App 应用')) {
                                 setSelectedTag(null);
                             } else {
