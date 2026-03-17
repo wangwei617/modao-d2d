@@ -557,10 +557,10 @@
 
 | 功能模块 | 编号 | 埋点事件 | 事件中文名 | 事件上报时机 | 属性（同一事件下多属性用换行列出） | 截图 | 项目版本 | 指标变更日志备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 生成应用 | D2D-001 | `MD_ai_d2d_prompt_click` | 提交生成指令 | 用户点击发送或按 Enter 提交（首页/对话追问均计） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（必填，string）：一次生成任务的唯一ID（用于串联生成/截图优化/发布）<br>`generation_mode`（string）：`web_app` / `app_app` / `other`<br>`source`（string）：`home` / `chat` / `screenshot`（入口来源；截图优化提交为 `screenshot`） |  |  | 核心：用量（提交量）+ 截图优化贡献分组 |
-| 生成应用 | D2D-002 | `MD_ai_d2d_generation_show` | 生成完成 | AI 流式输出完整结束（成功/失败都上报） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（string）：同上<br>`result`（string）：`success` / `fail`<br>`duration_ms`（number）：毫秒（用于耗时分布）<br>`result_type`（string）：`single_html` / `multi_html` / `react_app` / `document` |  |  | 核心：漏斗闭环与按类型拆分 |
-| 发布 | D2D-003 | `MD_ai_d2d_publish_show` | 发布结果回调 | 发布/更新/撤回异步完成后回调（成功/失败都上报） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（string）：同上<br>`action`（string）：`publish` / `update` / `withdraw`<br>`result`（string）：`success` / `fail` / `cancel`<br>`fail_reason`（string）：`network` / `slug_invalid` / `slug_occupied` / `sensitive` / `unknown`（成功/取消可为空） |  |  | 核心：发布用量、成功率与失败原因定位 |
-| 截图优化 | D2D-004 | `MD_ai_d2d_screenshot_add` | 截图优化产出 | 用户在截图优化模式中点击「添加到对话」，将截图/标注带回对话输入区（以“产出”作为价值口径，避免只统计进入） | `scene_tag`（必填，string）：`d2d`<br>`session_id`（必填，string）：同上<br>`type`（string）：`capture` / `comment` / `capture_comment`<br>`count`（number）：本次添加的截图数量（默认 1） |  |  | 核心：截图优化有效使用（有产出才算用） |
+| 生成应用 | D2D-001 | `MD_ai_d2d_prompt_click` | 提交生成指令 | 用户点击发送或按 Enter 提交（首页/对话追问均计） | `scene_tag`（场景标签，必填，string）：`d2d`<br>`session_id`（会话ID，必填，string）：一次生成任务的唯一ID（用于串联生成/截图优化/发布）<br>`generation_mode`（生成模式，string）：`web_app` / `app_app` / `other`<br>`source`（入口来源，string）：`d2d_tab` / `common` / `screenshot`（分别代表：二级Tab「生成应用」、通用模式命中生成应用、截图优化提交）<br>`agent_scene`（agent场景，string，可选）：`通用` / `生成 Web 应用` / `生成 App 应用`（与 `MD_ai_agent_use.agent_scene` 口径一致，用于串联与去重分析） |  |  | 核心：用量（提交量）+ 分来源（Tab vs 通用 vs 截图） |
+| 生成应用 | D2D-002 | `MD_ai_d2d_generation_show` | 生成完成 | AI 流式输出完整结束（成功/失败都上报） | `scene_tag`（场景标签，必填，string）：`d2d`<br>`session_id`（会话ID，必填，string）：同上<br>`result`（结果，string）：`success` / `fail`<br>`duration_ms`（生成耗时，number）：毫秒（用于耗时分布）<br>`result_type`（结果类型，string）：`single_html` / `multi_html` / `react_app` / `document` |  |  | 核心：成功率 + 性能 + 按类型拆分 |
+| 发布 | D2D-003 | `MD_ai_d2d_publish_show` | 发布结果回调 | 发布/更新/撤回异步完成后回调（成功/失败都上报） | `scene_tag`（场景标签，必填，string）：`d2d`<br>`session_id`（会话ID，必填，string）：同上<br>`action`（操作类型，string）：`publish` / `update` / `withdraw`<br>`result`（结果，string）：`success` / `fail` / `cancel`<br>`fail_reason`（失败原因，string）：`network` / `slug_invalid` / `slug_occupied` / `sensitive` / `unknown`（成功/取消可为空） |  |  | 核心：发布闭环 + 失败原因定位 |
+| 截图优化 | D2D-004 | `MD_ai_d2d_screenshot_add` | 截图优化产出 | 用户在截图优化模式中点击「添加到对话」，将截图/标注带回对话输入区（以“产出”作为价值口径，避免只统计进入） | `scene_tag`（场景标签，必填，string）：`d2d`<br>`session_id`（会话ID，必填，string）：同上<br>`type`（类型，string）：`capture` / `comment` / `capture_comment`<br>`count`（数量，number）：本次添加的截图数量（默认 1） |  |  | 核心：截图优化有效使用（有产出才算用） |
 ### 7-2、数据统计
 
 **核心看板指标**（供参考，由数据团队负责实现；口径清晰、可直接回答“做得好不好”）：
@@ -570,4 +570,4 @@
 - **性能监控**：`MD_ai_d2d_generation_show.duration_ms` 的 P50/P90/P99（按 `generation_mode` / `result_type` 拆分）
 - **截图优化价值评估（分组对比）**：
   - **使用量口径**：`MD_ai_d2d_screenshot_add`（有产出才算用）
-  - **对生成/发布的提升**：对比 `MD_ai_d2d_prompt_click.source=screenshot` vs 非 screenshot 的 `generation_show(result=success)`、`publish_show(action=publish,result=success)` 转化差异
+  - **对生成/发布的提升**：对比 `MD_ai_d2d_prompt_click.source=screenshot` vs `source=d2d_tab/common` 的 `generation_show(result=success)`、`publish_show(action=publish,result=success)` 转化差异（必要时可进一步拆分 `d2d_tab` vs `common`）
