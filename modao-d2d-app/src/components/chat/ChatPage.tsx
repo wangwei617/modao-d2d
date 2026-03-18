@@ -37,6 +37,7 @@ export function ChatPage() {
     const [activeTerminalFile, setActiveTerminalFile] = useState('墨刀AI界面设计评审.md');
     const [inputMessage, setInputMessage] = useState('');
     const [isPublishing, setIsPublishing] = useState(false);
+    const [publishPhase, setPublishPhase] = useState<'idle' | 'uploading' | 'reviewing'>('idle');
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
@@ -86,6 +87,9 @@ export function ChatPage() {
     const chatEndRef = useRef<HTMLDivElement>(null);
     const generatingRef = useRef(false);
 
+    const toolbarSession = sessions.find(s => s.id === activeMessage);
+    const isAppPrototypeSelected = toolbarSession?.selectedFileType === 'app';
+
     const updateSession = (id: string, updates: Partial<GenerationSession>) => {
         setSessions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
     };
@@ -100,6 +104,10 @@ export function ChatPage() {
     const [showSharePanel, setShowSharePanel] = useState(false);
     const [shareTab, setShareTab] = useState<'project' | 'file'>('project');
     const sharePanelRef = useRef<HTMLDivElement>(null);
+    const docSharePanelRef = useRef<HTMLDivElement>(null);
+
+    // Export dropdown (to Modao) state
+    const [showExportMenu, setShowExportMenu] = useState(false);
 
     // Publish modal state
     const [showPublishModal, setShowPublishModal] = useState(false);
@@ -365,7 +373,10 @@ export function ChatPage() {
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             // Check if the click is inside any iframe. If so, don't try to handle it with DOM nodes.
-            if (sharePanelRef.current && !sharePanelRef.current.contains(e.target as Node)) {
+            const inSharePanel =
+                (sharePanelRef.current && sharePanelRef.current.contains(e.target as Node)) ||
+                (docSharePanelRef.current && docSharePanelRef.current.contains(e.target as Node));
+            if (!inSharePanel) {
                 setShowSharePanel(false);
             }
             if (publishPanelRef.current && !publishPanelRef.current.contains(e.target as Node) && !showWithdrawConfirm && !isWithdrawing) {
@@ -482,6 +493,42 @@ export function ChatPage() {
 
     const hasPublishChanges = isPublished && projectName !== publishedProjectName;
 
+    const startPublishFlow = (action: 'publish' | 'update') => {
+        if (isPublishing) return;
+        setIsPublishing(true);
+        setPublishPhase('uploading');
+
+        // Step 1: upload to cloud for review (fast)
+        window.setTimeout(() => {
+            setPublishPhase('reviewing');
+        }, 800);
+
+        // Step 2: reviewing (long)
+        window.setTimeout(() => {
+            setIsPublishing(false);
+            setPublishPhase('idle');
+
+            if (action === 'publish') {
+                setIsPublished(true);
+                setPublishedProjectName(projectName);
+                setPublishVersion(1);
+                setPublishedAt(new Date());
+                showToast(tr('✅ 发布成功！网站已上线'));
+                return;
+            }
+
+            // update
+            setUpdateSuccess(true);
+            setPublishedProjectName(projectName);
+            setPublishVersion(v => v + 1);
+            setPublishedAt(new Date());
+            showToast(tr('✅ 更新成功！'));
+            window.setTimeout(() => {
+                setUpdateSuccess(false);
+            }, 1000);
+        }, 6800);
+    };
+
     const formatPublishedAt = (date: Date) => {
         const diffMs = Date.now() - date.getTime();
         const diffMins = Math.floor(diffMs / 60000);
@@ -564,10 +611,11 @@ export function ChatPage() {
                                     <span 
                                         className={cn(
                                             "flex-1 text-[13px] font-medium truncate transition-colors",
-                                            isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-2" : "text-gray-800 cursor-pointer hover:text-indigo-600 hover:underline underline-offset-2"
+                                            isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-2" : "text-gray-800 cursor-default"
                                         )}
-                                        title={isPublished ? tr("点击在新标签页打开") : tr("点击在新标签页打开预览")}
+                                        title={isPublished ? tr("点击在新标签页打开") : tr("发布后可访问")}
                                         onClick={() => {
+                                            if (!isPublished) return;
                                             window.open(`https://${customUrl}.modao.site`, '_blank');
                                         }}
                                     >
@@ -644,18 +692,7 @@ export function ChatPage() {
                             disabled={!hasPublishChanges || isPublishing}
                             onClick={() => {
                                 if (!hasPublishChanges || isPublishing) return;
-                                setIsPublishing(true);
-                                setTimeout(() => {
-                                    setIsPublishing(false);
-                                    setUpdateSuccess(true);
-                                    setPublishedProjectName(projectName);
-                                    setPublishVersion(v => v + 1);
-                                    setPublishedAt(new Date());
-                                    showToast(tr('✅ 更新成功！'));
-                                    setTimeout(() => {
-                                        setUpdateSuccess(false);
-                                    }, 1000);
-                                }, 1000);
+                                startPublishFlow('update');
                             }}
                             className={cn(
                                 "flex-1 h-[42px] rounded-[10px] font-semibold text-[14px] overflow-hidden relative transition",
@@ -668,7 +705,7 @@ export function ChatPage() {
                                 {tr('更新')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !updateSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                                <RefreshCw size={14} className="animate-spin" /> {tr('正在更新...')}
+                                <RefreshCw size={14} className="animate-spin" /> {publishPhase === 'reviewing' ? tr('审核中...') : tr('正在上传审核...')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", updateSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
                                 <Check size={16} strokeWidth={3} /> {tr('更新成功')}
@@ -681,15 +718,7 @@ export function ChatPage() {
                         disabled={isPublishing}
                         onClick={() => {
                             if (isPublishing) return;
-                            setIsPublishing(true);
-                            setTimeout(() => {
-                                setIsPublishing(false);
-                                setIsPublished(true);
-                                setPublishedProjectName(projectName);
-                                setPublishVersion(1);
-                                setPublishedAt(new Date());
-                                showToast(tr('✅ 发布成功！网站已上线'));
-                            }, 1000);
+                            startPublishFlow('publish');
                         }}
                         className={cn(
                             "w-full h-[42px] rounded-[10px] text-white font-semibold text-[14px] transition overflow-hidden relative",
@@ -700,7 +729,7 @@ export function ChatPage() {
                             {tr('发布')}
                         </div>
                         <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                            <RefreshCw size={14} className="animate-spin" /> {tr('正在发布...')}
+                            <RefreshCw size={14} className="animate-spin" /> {publishPhase === 'reviewing' ? tr('审核中...') : tr('正在上传审核...')}
                         </div>
                     </button>
                 )}
@@ -1240,11 +1269,24 @@ export function ChatPage() {
                                         </div>
                                         {/* 右侧：操作按钮一行排列 */}
                                         <div className="flex items-center gap-2 shrink-0 ml-4">
-                                            {/* 分享按钮 (图2样式) */}
-                                            <button className="h-8 px-4 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[12px] transition active:scale-95">
-                                                <Share size={14} strokeWidth={2.5} />
-                                                <span>{tr('分享')}</span>
-                                            </button>
+                                            {/* 分享按钮 + 下拉（文档默认分享项目） */}
+                                            <div className="relative shrink-0" ref={docSharePanelRef}>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setShareTab('project');
+                                                        setShowSharePanel(v => !v);
+                                                    }}
+                                                    className={cn(
+                                                        "h-8 px-4 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[12px] transition active:scale-95",
+                                                        showSharePanel && "bg-slate-100 border-slate-300"
+                                                    )}
+                                                >
+                                                    <Share size={14} strokeWidth={2.5} />
+                                                    <span>{tr('分享')}</span>
+                                                </button>
+                                                {showSharePanel && shareDropdown}
+                                            </div>
                                             {/* 复制按钮 (图2样式) */}
                                             <button title={tr('复制')} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition active:scale-95">
                                                 <Copy size={14} strokeWidth={2.5} />
@@ -1496,9 +1538,49 @@ export function ChatPage() {
                                 </div>
 
                                 <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                                    <button className="h-8 px-4 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/50 text-indigo-700 font-bold text-[12px] transition shrink-0 hover:bg-indigo-100 active:scale-95 shadow-sm shadow-indigo-100/50 whitespace-nowrap">
-                                        <Share2 size={13} strokeWidth={2.5} className="text-indigo-500" /> {tr('导出至墨刀')}
-                                    </button>
+                                    {isAppPrototypeSelected ? (
+                                        <DropdownMenu
+                                            open={showExportMenu}
+                                            onOpenChange={(v) => {
+                                                setShowExportMenu(v);
+                                                if (v) {
+                                                    setShowSharePanel(false);
+                                                    setShowPublishModal(false);
+                                                    setShowDeviceMenu(false);
+                                                    setShowVersionMenu(false);
+                                                }
+                                            }}
+                                        >
+                                            <DropdownMenuTrigger asChild>
+                                                <button className="h-8 px-4 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/50 text-indigo-700 font-bold text-[12px] transition shrink-0 hover:bg-indigo-100 active:scale-95 shadow-sm shadow-indigo-100/50 whitespace-nowrap">
+                                                    <Share2 size={13} strokeWidth={2.5} className="text-indigo-500" /> {tr('导出至墨刀')}
+                                                    <ChevronDown size={12} className="text-indigo-400 -mr-0.5" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="w-[180px]">
+                                                <DropdownMenuItem
+                                                    className="text-[12px] font-bold cursor-pointer"
+                                                    onClick={() => {
+                                                        showToast(tr('已导出至墨刀原型'));
+                                                    }}
+                                                >
+                                                    {tr('导出至墨刀原型')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    className="text-[12px] font-bold cursor-pointer"
+                                                    onClick={() => {
+                                                        showToast(tr('已导出至墨刀设计'));
+                                                    }}
+                                                >
+                                                    {tr('导出至墨刀设计')}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    ) : (
+                                        <button className="h-8 px-4 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/50 text-indigo-700 font-bold text-[12px] transition shrink-0 hover:bg-indigo-100 active:scale-95 shadow-sm shadow-indigo-100/50 whitespace-nowrap">
+                                            <Share2 size={13} strokeWidth={2.5} className="text-indigo-500" /> {tr('导出至墨刀')}
+                                        </button>
+                                    )}
 
                                     {/* 分享按钮 + 下拉面板 */}
                                     <div className="relative shrink-0" ref={sharePanelRef}>
@@ -1510,8 +1592,10 @@ export function ChatPage() {
                                             )}
                                             onClick={(e) => { 
                                                 e.stopPropagation();
+                                                setShareTab('project');
                                                 setShowSharePanel(v => !v); 
                                                 setShowPublishModal(false); 
+                                                setShowExportMenu(false);
                                                 setShowDeviceMenu(false);
                                                 setShowVersionMenu(false);
                                             }}
@@ -1528,6 +1612,7 @@ export function ChatPage() {
                                                 e.stopPropagation();
                                                 setShowPublishModal(v => !v); 
                                                 setShowSharePanel(false); 
+                                                setShowExportMenu(false);
                                                 setShowDeviceMenu(false);
                                                 setShowVersionMenu(false);
                                             }}
@@ -1766,7 +1851,17 @@ export function ChatPage() {
                                                             </div>
                                                             <div className="flex items-center gap-1 shrink-0 ml-1">
                                                                 <div className="relative group flex justify-center">
-                                                                    <button className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-800 transition"><RotateCw size={12} strokeWidth={2.5}/></button>
+                                                                    <button
+                                                                        disabled={activeTab === 'edit'}
+                                                                        className={cn(
+                                                                            "p-1 rounded transition",
+                                                                            activeTab === 'edit'
+                                                                                ? "text-slate-300 cursor-not-allowed"
+                                                                                : "text-slate-400 hover:bg-slate-200 hover:text-slate-800"
+                                                                        )}
+                                                                    >
+                                                                        <RotateCw size={12} strokeWidth={2.5}/>
+                                                                    </button>
                                                                     <div className="absolute top-full mt-2 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-50 pointer-events-none">{tr('刷新')}</div>
                                                                 </div>
                                                                 <div className="relative group flex justify-center">

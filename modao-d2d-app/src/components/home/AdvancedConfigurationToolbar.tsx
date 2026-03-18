@@ -9,7 +9,8 @@ import {
     Sun,
     Moon,
     Zap,
-    Microscope
+    Microscope,
+    MoreHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -83,21 +84,22 @@ interface Theme {
 }
 
 const SHADCN_THEMES: Theme[] = [
-    { id: 'auto', name: '自动', colors: ['#f97316', '#ec4899', '#6366f1'] },
+    // 面向“生成应用”场景：选择更通用、更稳妥的默认主题色集合（1 个自动 + 5 个常用色）
+    { id: 'auto', name: '自动', colors: ['#6366f1', '#22c55e', '#f97316'] },
     { id: 'blue', name: '蓝', colors: ['#3b82f6', '#93c5fd'] },
-    { id: 'green', name: '绿', colors: ['#10b981', '#6ee7b7'] },
+    { id: 'green', name: '绿', colors: ['#22c55e', '#86efac'] },
     { id: 'purple', name: '紫', colors: ['#8b5cf6', '#c4b5fd'] },
-    { id: 'orange', name: '橙', colors: ['#ea580c', '#fdba74'] },
-    { id: 'yellow', name: '黄', colors: ['#eab308', '#fde047'] },
+    { id: 'orange', name: '橙', colors: ['#f97316', '#fdba74'] },
+    { id: 'red', name: '红', colors: ['#ef4444', '#fca5a5'] },
 ];
 
 const PRIMARY_COLORS = [
     { id: 'auto', gradient: 'conic-gradient(from 180deg at 50% 50%, #ff0000, #ff8000, #ffff00, #00ff00, #0000ff, #8000ff, #ff00ff, #ff0000)', label: '自动' },
-    { id: 'orange', color: '#f97316', label: '橙' },
-    { id: 'green', color: '#22c55e', label: '绿' },
     { id: 'blue', color: '#3b82f6', label: '蓝' },
+    { id: 'green', color: '#22c55e', label: '绿' },
+    { id: 'purple', color: '#8b5cf6', label: '紫' },
+    { id: 'orange', color: '#f97316', label: '橙' },
     { id: 'red', color: '#ef4444', label: '红' },
-    { id: 'yellow', color: '#eab308', label: '黄' },
 ];
 
 // ---- 生成模式选项 ----
@@ -127,6 +129,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
     const [selectedTheme, setSelectedTheme] = useState(SHADCN_THEMES[0]);
     const [selectedColor, setSelectedColor] = useState(PRIMARY_COLORS[0]);
     const [showConfigDropdown, setShowConfigDropdown] = useState(false);
+    const [showMoreDropdown, setShowMoreDropdown] = useState(false);
     const [darkMode, setDarkMode] = useState<'light' | 'dark'>('light');
     const [generationMode, setGenerationMode] = useState(GENERATION_MODES[0]);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
@@ -134,12 +137,14 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
     const dsRef = useRef<HTMLDivElement>(null);
     const configRef = useRef<HTMLDivElement>(null);
     const modeRef = useRef<HTMLDivElement>(null);
+    const moreRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (dsRef.current && !dsRef.current.contains(e.target as Node)) setShowDSDropdown(false);
             if (configRef.current && !configRef.current.contains(e.target as Node)) setShowConfigDropdown(false);
             if (modeRef.current && !modeRef.current.contains(e.target as Node)) setShowModeDropdown(false);
+            if (moreRef.current && !moreRef.current.contains(e.target as Node)) setShowMoreDropdown(false);
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
@@ -150,6 +155,7 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
         setShowDSDropdown(false);
         setShowConfigDropdown(false);
         setShowModeDropdown(false);
+        setShowMoreDropdown(false);
     }, [showDesignSystemSelector]);
 
     if (!showDesignSystemSelector) return null;
@@ -218,129 +224,254 @@ export function AdvancedConfigurationToolbar({ showDesignSystemSelector = true, 
                 </div>
             )}
 
-            {/* Design System Selector */}
-            <div className="relative" ref={dsRef}>
-                <button
-                    onClick={() => setShowDSDropdown(!showDSDropdown)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-100 bg-white rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-                >
-                    <span className="text-gray-400">{selectedDS.icon}</span>
-                    {selectedDS.name}
-                    <ChevronDown size={12} className={cn("text-gray-300 transition-transform", showDSDropdown && "rotate-180")} />
-                </button>
-                {showDSDropdown && (
-                    <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-gray-100 rounded-xl shadow-xl p-1.5 w-48 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                        {DESIGN_SYSTEMS.map(ds => (
-                            <button
-                                key={ds.id}
-                                onClick={() => { setSelectedDS(ds); setShowDSDropdown(false); }}
-                                className={cn(
-                                    "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-left group",
-                                    selectedDS.id === ds.id ? "bg-indigo-50 text-indigo-600 font-bold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                )}
-                            >
-                                <span className={cn("shrink-0 transition-colors", selectedDS.id === ds.id ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600")}>
-                                    {ds.icon}
-                                </span>
-                                <span className="flex-1">{ds.name}</span>
-                                {selectedDS.id === ds.id && <Check size={12} strokeWidth={3} />}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
+            {/* Inline: merge Design System + Theme into a single "More" dropdown */}
+            {inline ? (
+                <div className="relative" ref={moreRef}>
+                    <button
+                        onClick={() => {
+                            setShowMoreDropdown(v => !v);
+                            setShowDSDropdown(false);
+                            setShowConfigDropdown(false);
+                        }}
+                        className="flex items-center justify-center px-3 py-1.5 border border-gray-100 bg-white rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        <MoreHorizontal size={14} className="text-gray-500" />
+                    </button>
+                    {showMoreDropdown && (
+                        <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-gray-100 rounded-2xl shadow-xl p-4 w-[280px] animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('设计系统')}</div>
+                            <div className="flex flex-col gap-1 mb-4">
+                                {DESIGN_SYSTEMS.map(ds => (
+                                    <button
+                                        key={ds.id}
+                                        onClick={() => { setSelectedDS(ds); }}
+                                        className={cn(
+                                            "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all text-left group",
+                                            selectedDS.id === ds.id ? "bg-indigo-50 text-indigo-600 font-bold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        )}
+                                    >
+                                        <span className={cn("shrink-0 transition-colors", selectedDS.id === ds.id ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600")}>
+                                            {ds.icon}
+                                        </span>
+                                        <span className="flex-1">{ds.name}</span>
+                                        {selectedDS.id === ds.id && <Check size={12} strokeWidth={3} />}
+                                    </button>
+                                ))}
+                            </div>
 
-            {/* Config Selector */}
-            <div className="relative" ref={configRef}>
-                <button
-                    onClick={() => setShowConfigDropdown(!showConfigDropdown)}
-                    className="flex items-center gap-2 px-3 py-1.5 border border-gray-100 bg-white rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-                >
-                    {selectedDS.isShadcn ? (
-                        <>
-                            <div className="w-3 h-3 rounded-full shadow-inner" style={{ background: `linear-gradient(135deg, ${selectedTheme.colors.join(', ')})` }} />
-                            <span>{tr(selectedTheme.name)}</span>
-                        </>
-                    ) : (
-                        <>
-                            <div className="w-3 h-3 rounded-full shadow-inner" style={selectedColor.id === 'auto' ? { background: selectedColor.gradient } : { background: selectedColor.color }} />
-                            <span>{darkMode === 'light' ? tr('亮色') : tr('暗色')}</span>
-                        </>
-                    )}
-                    <ChevronDown size={12} className={cn("text-gray-300 transition-transform", showConfigDropdown && "rotate-180")} />
-                </button>
-                {showConfigDropdown && (
-                    <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-gray-100 rounded-2xl shadow-xl p-4 w-[240px] animate-in fade-in slide-in-from-top-2 duration-200">
-                        {selectedDS.isShadcn ? (
-                            <>
-                                <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-3 px-1">{tr('主题色')}</div>
-                                <div className="flex flex-col gap-1">
-                                    {SHADCN_THEMES.map(theme => (
-                                        <button
-                                            key={theme.id}
-                                            onClick={() => { setSelectedTheme(theme); setShowConfigDropdown(false); }}
-                                            className={cn(
-                                                "w-full flex items-center gap-3 px-2 py-2 rounded-xl transition-all text-left",
-                                                selectedTheme.id === theme.id ? "bg-gray-50" : "hover:bg-gray-50/50"
-                                            )}
-                                        >
-                                            <div className="w-6 h-6 rounded-lg border border-gray-100 shadow-sm" style={{ background: `linear-gradient(135deg, ${theme.colors.join(', ')})` }} />
-                                            <span className={cn("text-xs font-bold", selectedTheme.id === theme.id ? "text-gray-800" : "text-gray-500")}>{tr(theme.name)}</span>
-                                            {selectedTheme.id === theme.id && <Check size={12} className="ml-auto text-gray-800" strokeWidth={3} />}
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="mb-4">
-                                    <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('外观')}</div>
-                                    <div className="flex p-1 bg-gray-50 rounded-xl border border-gray-100/50">
-                                        <button
-                                            onClick={() => setDarkMode('light')}
-                                            className={cn(
-                                                "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all",
-                                                darkMode === 'light' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
-                                            )}
-                                        >
-                                            <Sun size={14} /> {tr('亮色')}
-                                        </button>
-                                        <button
-                                            onClick={() => setDarkMode('dark')}
-                                            className={cn(
-                                                "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all",
-                                                darkMode === 'dark' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
-                                            )}
-                                        >
-                                            <Moon size={14} /> {tr('暗色')}
-                                        </button>
+                            {selectedDS.isShadcn ? (
+                                <>
+                                    <div className="flex items-center gap-2 text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">
+                                        {tr('主题色')}
                                     </div>
-                                </div>
-                                <div>
-                                    <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('主题色')}</div>
                                     <div className="flex justify-between items-center px-1">
-                                        {PRIMARY_COLORS.map(c => (
-                                            <div key={c.id} className="relative flex justify-center group/color">
+                                        {SHADCN_THEMES.map(theme => (
+                                            <div key={theme.id} className="relative flex justify-center group/theme">
                                                 <button
-                                                    onClick={() => setSelectedColor(c)}
+                                                    onClick={() => { setSelectedTheme(theme); }}
                                                     className={cn(
-                                                        "w-7 h-7 rounded-full transition-all border-2",
-                                                        selectedColor.id === c.id ? "border-indigo-500 scale-110 shadow-md" : "border-transparent hover:scale-105"
+                                                        "w-9 h-9 rounded-full transition-all border-2 shadow-sm",
+                                                        selectedTheme.id === theme.id ? "border-indigo-500 scale-110 shadow-md" : "border-transparent hover:scale-105"
                                                     )}
-                                                    style={c.id === 'auto' ? { background: c.gradient } : { background: c.color }}
+                                                    style={{ background: `linear-gradient(135deg, ${theme.colors.join(', ')})` }}
                                                 />
-                                                <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                                    {tr(c.label)}
+                                                {selectedTheme.id === theme.id && (
+                                                    <Check size={14} strokeWidth={3} className="absolute inset-0 m-auto text-white drop-shadow" />
+                                                )}
+                                                <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/theme:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                    {tr(theme.name)}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            </>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="mb-4">
+                                        <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('外观')}</div>
+                                        <div className="flex p-1 bg-gray-50 rounded-xl border border-gray-100/50">
+                                            <button
+                                                onClick={() => setDarkMode('light')}
+                                                className={cn(
+                                                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all",
+                                                    darkMode === 'light' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                                )}
+                                            >
+                                                <Sun size={14} /> {tr('亮色')}
+                                            </button>
+                                            <button
+                                                onClick={() => setDarkMode('dark')}
+                                                className={cn(
+                                                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all",
+                                                    darkMode === 'dark' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                                )}
+                                            >
+                                                <Moon size={14} /> {tr('暗色')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('主题色')}</div>
+                                        <div className="flex justify-between items-center px-1">
+                                            {PRIMARY_COLORS.map(c => (
+                                                <div key={c.id} className="relative flex justify-center group/color">
+                                                    <button
+                                                        onClick={() => { setSelectedColor(c); }}
+                                                        className={cn(
+                                                            "w-9 h-9 rounded-full transition-all border-2 shadow-sm",
+                                                            selectedColor.id === c.id ? "border-indigo-500 scale-110 shadow-md" : "border-transparent hover:scale-105"
+                                                        )}
+                                                        style={c.id === 'auto' ? { background: c.gradient } : { background: c.color }}
+                                                    />
+                                                    {selectedColor.id === c.id && (
+                                                        <Check size={14} strokeWidth={3} className="absolute inset-0 m-auto text-white drop-shadow" />
+                                                    )}
+                                                    <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        {tr(c.label)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <>
+                    {/* Design System Selector */}
+                    <div className="relative" ref={dsRef}>
+                        <button
+                            onClick={() => setShowDSDropdown(!showDSDropdown)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-100 bg-white rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            <span className="text-gray-400">{selectedDS.icon}</span>
+                            {selectedDS.name}
+                            <ChevronDown size={12} className={cn("text-gray-300 transition-transform", showDSDropdown && "rotate-180")} />
+                        </button>
+                        {showDSDropdown && (
+                            <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-gray-100 rounded-xl shadow-xl p-1.5 w-48 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                {DESIGN_SYSTEMS.map(ds => (
+                                    <button
+                                        key={ds.id}
+                                        onClick={() => { setSelectedDS(ds); setShowDSDropdown(false); }}
+                                        className={cn(
+                                            "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all text-left group",
+                                            selectedDS.id === ds.id ? "bg-indigo-50 text-indigo-600 font-bold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        )}
+                                    >
+                                        <span className={cn("shrink-0 transition-colors", selectedDS.id === ds.id ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600")}>
+                                            {ds.icon}
+                                        </span>
+                                        <span className="flex-1">{ds.name}</span>
+                                        {selectedDS.id === ds.id && <Check size={12} strokeWidth={3} />}
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
-                )}
-            </div>
+
+                    {/* Config Selector */}
+                    <div className="relative" ref={configRef}>
+                        <button
+                            onClick={() => setShowConfigDropdown(!showConfigDropdown)}
+                            className="flex items-center gap-2 px-3 py-1.5 border border-gray-100 bg-white rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            {selectedDS.isShadcn ? (
+                                <>
+                                    <div className="w-3 h-3 rounded-full shadow-inner" style={{ background: `linear-gradient(135deg, ${selectedTheme.colors.join(', ')})` }} />
+                                    <span>{tr(selectedTheme.name)}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="w-3 h-3 rounded-full shadow-inner" style={selectedColor.id === 'auto' ? { background: selectedColor.gradient } : { background: selectedColor.color }} />
+                                    <span>{darkMode === 'light' ? tr('亮色') : tr('暗色')}</span>
+                                </>
+                            )}
+                            <ChevronDown size={12} className={cn("text-gray-300 transition-transform", showConfigDropdown && "rotate-180")} />
+                        </button>
+                        {showConfigDropdown && (
+                            <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-gray-100 rounded-2xl shadow-xl p-4 w-[240px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                {selectedDS.isShadcn ? (
+                                    <>
+                                        <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-3 px-1">{tr('主题色')}</div>
+                                        <div className="flex justify-between items-center px-1">
+                                            {SHADCN_THEMES.map(theme => (
+                                                <div key={theme.id} className="relative flex justify-center group/theme">
+                                                    <button
+                                                        onClick={() => { setSelectedTheme(theme); }}
+                                                        className={cn(
+                                                            "w-9 h-9 rounded-full transition-all border-2 shadow-sm",
+                                                            selectedTheme.id === theme.id ? "border-indigo-500 scale-110 shadow-md" : "border-transparent hover:scale-105"
+                                                        )}
+                                                        style={{ background: `linear-gradient(135deg, ${theme.colors.join(', ')})` }}
+                                                    />
+                                                    {selectedTheme.id === theme.id && (
+                                                        <Check size={14} strokeWidth={3} className="absolute inset-0 m-auto text-white drop-shadow" />
+                                                    )}
+                                                    <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/theme:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        {tr(theme.name)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="mb-4">
+                                            <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('外观')}</div>
+                                            <div className="flex p-1 bg-gray-50 rounded-xl border border-gray-100/50">
+                                                <button
+                                                    onClick={() => setDarkMode('light')}
+                                                    className={cn(
+                                                        "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all",
+                                                        darkMode === 'light' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                                    )}
+                                                >
+                                                    <Sun size={14} /> {tr('亮色')}
+                                                </button>
+                                                <button
+                                                    onClick={() => setDarkMode('dark')}
+                                                    className={cn(
+                                                        "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all",
+                                                        darkMode === 'dark' ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                                    )}
+                                                >
+                                                    <Moon size={14} /> {tr('暗色')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2 px-1">{tr('主题色')}</div>
+                                            <div className="flex justify-between items-center px-1">
+                                                {PRIMARY_COLORS.map(c => (
+                                                    <div key={c.id} className="relative flex justify-center group/color">
+                                                        <button
+                                                            onClick={() => setSelectedColor(c)}
+                                                            className={cn(
+                                                                "w-9 h-9 rounded-full transition-all border-2 shadow-sm",
+                                                                selectedColor.id === c.id ? "border-indigo-500 scale-110 shadow-md" : "border-transparent hover:scale-105"
+                                                            )}
+                                                            style={c.id === 'auto' ? { background: c.gradient } : { background: c.color }}
+                                                        />
+                                                        {selectedColor.id === c.id && (
+                                                            <Check size={14} strokeWidth={3} className="absolute inset-0 m-auto text-white drop-shadow" />
+                                                        )}
+                                                        <div className="absolute top-full mt-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                            {tr(c.label)}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
 
             {/* Device Switcher */}
             {!inline && (
