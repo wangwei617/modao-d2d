@@ -12,8 +12,9 @@ const CARD_PLACEHOLDER: Record<string, string> = {
     'HTML转原型': '请上传HTML文件或粘贴代码，我将一键转换为墨刀原型...',
     '竞品分析': '请输入目标产品或竞品名称，我将进行多维度对比分析...',
     '产品方案评审': '请描述你的产品方案或上传原型，我将提供智能评审意见...',
-    '生成 Web 应用': '请描述你的 Web 应用需求，我将生成完整的前端代码...',
-    '生成 App 应用': '请描述移动端应用功能，我将生成对应页面代码...',
+    'AI生成应用': '请描述你的应用需求，我将生成完整的应用和代码...',
+    'AI生成Web应用': '请描述你的 Web 应用需求，我将生成完整的应用和代码...',
+    'AI生成App': '请描述你的 App 需求，我将生成完整的应用和代码...',
     '功能交互文档': '请描述产品功能，我将生成详细的交互说明文档...',
     '用户调研': '请描述调研目标和用户画像，我将生成调研问卷...',
     '产品规划': '请输入产品阶段目标，我将制定版本迭代计划和 Roadmap...',
@@ -70,7 +71,7 @@ function SubCard({ data, onClick }: { data: SubCardData; onClick: () => void }) 
 }
 
 const RECOMMEND_CARDS: SubCardData[] = [
-    { title: '生成 Web 应用', desc: '一键生成全栈网页代码', badge: 'Hot✨', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><path d="M3 9h18" /><path d="M9 21V9" /></> },
+    { title: 'AI生成应用', desc: '一句话生成多端应用', badge: 'Hot✨', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></> },
     { title: 'AI生成原型', desc: '一键生成可交互原型', badge: 'Hot✨', hoverBg: 'group-hover:bg-indigo-50', hoverColor: 'group-hover:text-indigo-500', iconPath: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></> },
     { title: '图片转原型', desc: '上传图片，一键转为原型', badge: 'Hot✨', hoverBg: 'group-hover:bg-blue-50', hoverColor: 'group-hover:text-blue-500', iconPath: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></> },
     { title: '需求文档PRD', desc: '快速生成包含详细逻辑的产品需求文档', badge: 'Hot✨', hoverBg: 'group-hover:bg-emerald-50', hoverColor: 'group-hover:text-emerald-500', iconPath: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></> },
@@ -79,8 +80,9 @@ const RECOMMEND_CARDS: SubCardData[] = [
 ];
 
 const GENERATE_CARDS: SubCardData[] = [
-    { title: '生成 Web 应用', desc: '一键生成全栈网页代码', badge: 'Hot✨', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><path d="M3 9h18" /><path d="M9 21V9" /></> },
-    { title: '生成 App 应用', desc: '一键生成移动端页面代码', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></> },
+    { title: 'AI生成应用', desc: '一句话生成多端应用', badge: 'Hot✨', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></> },
+    { title: 'AI生成Web应用', desc: '一键生成全栈网页代码', badge: 'Hot✨', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><path d="M3 9h18" /><path d="M9 21V9" /></> },
+    { title: 'AI生成App', desc: '一键生成移动端页面代码', hoverBg: 'group-hover:bg-purple-50', hoverColor: 'group-hover:text-purple-500', iconPath: <><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></> },
 ];
 
 const PROTOTYPE_CARDS: SubCardData[] = [
@@ -274,12 +276,17 @@ export function PromptInput() {
     const handleSend = () => {
         const text = inputValue.trim();
         if (!text) return;
-        setUserPrompt(selectedTag ? `[${selectedTag}] ${text}` : text);
+        // AI生成应用作为通用入口不添加标签前缀
+        const finalPrompt = selectedTag && selectedTag !== 'AI生成应用' ? `[${selectedTag}] ${text}` : text;
+        setUserPrompt(finalPrompt);
         setInputValue('');
         setViewMode('chat');
     };
 
-    const isWebOrApp = selectedTag === '生成 Web 应用' || selectedTag === '生成 App 应用';
+    const isWebOrApp = selectedTag === 'AI生成Web应用' || selectedTag === 'AI生成App' || selectedTag === 'AI生成应用';
+    // 当选中的是“AI生成应用”这个通用入口时，我们只变输入框 placeholder，不强行追加前缀字符串到用户输入的文本里
+    // 但依然要显示胶囊标签(tag pill)
+    const showTagPill = !!selectedTag;
     const cards = TAB_CARDS_MAP[activeTab] ?? [];
     const contextualPlaceholder = selectedTag
         ? tr(CARD_PLACEHOLDER[selectedTag] ?? `请描述「${selectedTag}」相关需求...`)
@@ -290,7 +297,7 @@ export function PromptInput() {
             {/* === Input Box === */}
             <div className="relative z-20 bg-white rounded-2xl border border-gray-200 shadow-lg shadow-gray-100/50 p-4 mb-10 min-h-[120px] flex flex-col group focus-within:ring-1 ring-indigo-200 transition-all">
                 <div className="flex flex-wrap items-start gap-2 w-full flex-1 min-h-[80px]">
-                    {selectedTag && (
+                    {showTagPill && (
                         <div
                             onClick={clearTag}
                             className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[13px] font-medium border border-indigo-100 h-8 select-none flex-shrink-0 cursor-pointer hover:bg-indigo-100 transition-colors group/tag"
@@ -325,7 +332,7 @@ export function PromptInput() {
                         <SpeedModeBtn />
                         {isWebOrApp && <AdvancedConfigurationToolbar showDesignSystemSelector={true} inline={true} />}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <button className="text-gray-400 hover:text-gray-600 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
@@ -350,7 +357,7 @@ export function PromptInput() {
             </div>
 
             {/* === Primary Tabs — always visible === */}
-            <div className="flex flex-wrap justify-center gap-2 mb-5 mx-auto w-fit">
+            <div className="flex flex-wrap justify-center gap-2 mb-5 mx-auto w-fit max-w-full">
                 {TABS.map(tab => (
                     <button
                         key={tab.id}
@@ -360,14 +367,14 @@ export function PromptInput() {
                             // If switching away, clear the tag if it's one of the generate app tags.
                             if (tab.id === 'generate') {
                                 setSelectedTag(null);
-                            } else if (tab.id !== 'generate' && (selectedTag === '生成 Web 应用' || selectedTag === '生成 App 应用')) {
+                            } else if (tab.id !== 'generate' && (selectedTag === 'AI生成Web应用' || selectedTag === 'AI生成App')) {
                                 setSelectedTag(null);
                             } else {
                                 setSelectedTag(null);
                             }
                         }}
                         data-tab-id={tab.id}
-                        className="tab-btn flex flex-col items-center gap-2 px-6 py-3 min-w-[88px] rounded-[20px] transition-all duration-200 group"
+                        className="tab-btn flex flex-col items-center gap-2 px-3 sm:px-4 md:px-5 lg:px-6 py-3 min-w-[72px] sm:min-w-[80px] md:min-w-[88px] rounded-[20px] transition-all duration-200 group"
                         style={activeTab === tab.id ? { backgroundColor: tab.bg } : {}}
                     >
                         <div

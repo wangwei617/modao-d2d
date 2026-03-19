@@ -427,13 +427,17 @@
   </div>
 
   <script>
-    // 检测是否在本地开发环境 (localhost 或 127.0.0.1 且端口非 80/443/Vercel)
-    // 如果是本地，我们将 demo 链接自动重定向到 Vite 开发服务器的端口 (默认 5174)
+    // 检测是否在本地开发环境 (文件协议 file://，或 localhost/127.0.0.1 且非 vite 端口)
+    // 如果是本地且没直接跑在 5174/3000 上，我们将 demo 链接自动重定向到 Vite 开发服务器的默认端口 (5174)
     document.addEventListener('DOMContentLoaded', () => {
       const hostname = window.location.hostname;
       const port = window.location.port;
+      const protocol = window.location.protocol;
       
-      if ((hostname === '127.0.0.1' || hostname === 'localhost') && port !== '' && port !== '5174' && port !== '3000') {
+      const isLocalFile = protocol === 'file:';
+      const isLocalHostServer = (hostname === '127.0.0.1' || hostname === 'localhost') && port !== '' && port !== '5174' && port !== '3000';
+      
+      if (isLocalFile || isLocalHostServer) {
         const demoLink = document.getElementById('demo-card-link');
         const demoEnLink = document.getElementById('demo-en-card-link');
         const mobileLink = document.getElementById('mobile-demo-card-link');

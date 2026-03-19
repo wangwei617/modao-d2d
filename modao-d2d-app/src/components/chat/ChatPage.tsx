@@ -421,11 +421,11 @@ export function ChatPage() {
                     <button
                         onClick={() => setShareTab('project')}
                         className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition-all", shareTab === 'project' ? "bg-white text-[#4f46e5] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                    >{tr('分享项目')}</button>
+                    >{tr('分享完整项目')}</button>
                     <button
                         onClick={() => setShareTab('file')}
                         className={cn("px-4 py-1.5 text-[12px] font-bold rounded-md transition-all", shareTab === 'file' ? "bg-white text-[#4f46e5] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                    >{tr('分享文件')}</button>
+                    >{tr('分享当前预览')}</button>
                 </div>
                 <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition" onClick={() => setShowSharePanel(false)}>
                     <X size={15} />
@@ -438,7 +438,7 @@ export function ChatPage() {
                     <div className="mt-0.5 text-slate-400">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     </div>
-                    <span>{shareTab === 'project' ? tr('把整个对话和对话中生成的所有内容分享出去') : tr('只分享当前所选的文件')}</span>
+                    <span>{shareTab === 'project' ? tr('包含整个对话记录和所有生成的内容') : tr('仅分享当前正在预览的内容')}</span>
                 </div>
 
                 {/* Access permission */}
@@ -1561,18 +1561,19 @@ export function ChatPage() {
                                                 <DropdownMenuItem
                                                     className="text-[12px] font-bold cursor-pointer"
                                                     onClick={() => {
-                                                        showToast(tr('已导出至墨刀原型'));
-                                                    }}
-                                                >
-                                                    {tr('导出至墨刀原型')}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="text-[12px] font-bold cursor-pointer"
-                                                    onClick={() => {
                                                         showToast(tr('已导出至墨刀设计'));
                                                     }}
                                                 >
                                                     {tr('导出至墨刀设计')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    className="text-[12px] font-bold cursor-not-allowed opacity-50"
+                                                    disabled
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                    }}
+                                                >
+                                                    {tr('导出至墨刀原型')}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

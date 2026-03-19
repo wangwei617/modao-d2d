@@ -13,8 +13,9 @@ export function MobileHome({ onSend }: { onSend: (prompt: string) => void }) {
     ];
 
     const generateCards = [
-        { title: '生成 Web 应用', desc: '一键生成全栈网页代码' },
-        { title: '生成 App 应用', desc: '一键生成移动端页面代码' },
+        { title: 'AI生成应用', desc: '一句话生成多端应用' },
+        { title: 'AI生成Web应用', desc: '一键生成全栈网页代码' },
+        { title: 'AI生成App', desc: '一键生成移动端页面代码' },
     ];
 
     return (
