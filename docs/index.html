@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>项目文档预览</title>
+  <meta name="description" content="通用 Markdown 文档预览模板" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f8f9fc;
+      --surface: #ffffff;
+      --border: #e5e9f0;
+      --text: #1a202c;
+      --text-secondary: #4a5568;
+      --text-muted: #718096;
+      --accent: #4f6ef7;
+      --accent-light: #eef0ff;
+      --code-bg: #f7f8fa;
+    }
+    html[data-theme="dark"] {
+      --bg: #0b1220;
+      --surface: #0f172a;
+      --border: rgba(148,163,184,0.18);
+      --text: #e5e7eb;
+      --text-secondary: rgba(226,232,240,0.88);
+      --text-muted: rgba(226,232,240,0.62);
+      --accent: #7c7ff6;
+      --accent-light: rgba(124,127,246,0.14);
+      --code-bg: rgba(148,163,184,0.10);
+    }
+    body {
+      font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .site-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      height: 56px; padding: 0 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    html[data-theme="dark"] .site-header { background: rgba(15, 23, 42, 0.72); }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      text-decoration: none; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 8px;
+    }
+    .back-btn:hover { background: var(--accent-light); color: var(--text); }
+    .header-divider { width: 1px; height: 16px; background: var(--border); }
+    .doc-title-header { font-size: 14px; font-weight: 700; }
+    .theme-toggle {
+      display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+      border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .theme-toggle:hover { background: rgba(148,163,184,0.10); color: var(--text); }
+    .main-wrapper { display: flex; min-height: calc(100vh - 56px); width: 100%; }
+    .toc-handle-wrapper { position: fixed; left: 0; top: 84px; z-index: 100; pointer-events: none; }
+    .toc-handle {
+      pointer-events: auto; margin-left: 10px; height: 36px; padding: 0 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+      color: var(--text-secondary); font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer;
+    }
+    html[data-theme="dark"] .toc-handle { background: rgba(15, 23, 42, 0.78); }
+    .main-wrapper.toc-open .toc-handle { opacity: 0; pointer-events: none; transform: translateX(-8px); transition: .2s; }
+    .toc-panel {
+      flex: 0 0 0; width: 0; opacity: 0; overflow: hidden;
+      margin-top: 28px; position: sticky; top: 84px; align-self: flex-start; height: calc(100vh - 110px);
+      transition: flex-basis 280ms ease, opacity 280ms ease;
+    }
+    .main-wrapper.toc-open .toc-panel { flex: 0 0 320px; opacity: 1; }
+    .toc-panel-inner {
+      width: 300px; height: 100%; margin: 0 10px; border-radius: 16px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      display: flex; flex-direction: column;
+    }
+    html[data-theme="dark"] .toc-panel-inner { background: rgba(15, 23, 42, 0.78); }
+    .toc-header {
+      display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .toc-title { font-size: 14px; font-weight: 800; }
+    .toc-close {
+      width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+      color: var(--text-muted); cursor: pointer;
+    }
+    .toc-close:hover { background: rgba(148,163,184,0.15); color: var(--text); }
+    .toc-body { padding: 10px; overflow: auto; flex: 1; }
+    .toc-list { list-style: none; }
+    .toc-item a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px;
+      color: var(--text-secondary); border: 1px solid transparent; text-decoration: none; font-size: 13px; font-weight: 600;
+    }
+    .toc-item a:hover { background: rgba(148,163,184,0.10); border-color: rgba(148,163,184,0.18); color: var(--text); }
+    .toc-item a.active { background: rgba(148,163,184,0.15); color: var(--accent); border-color: rgba(148,163,184,0.20); }
+    .toc-item.level-3 a { padding-left: 22px; font-size: 12.5px; }
+    .toc-item.level-4 a { padding-left: 34px; font-size: 12px; opacity: 0.92; }
+    .toc-dot { width: 6px; height: 6px; border-radius: 999px; background: rgba(148,163,184,0.55); }
+    .toc-item.level-2 .toc-dot { background: rgba(79,110,247,0.85); }
+    .layout {
+      flex: 1; min-width: 0; max-width: 1200px; margin: 0 auto;
+      padding: 30px 24px 70px; transition: padding .28s;
+    }
+    .main-wrapper.toc-open .layout { padding-left: 20px; padding-right: 34px; }
+    .loading {
+      min-height: 45vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; color: var(--text-muted);
+    }
+    .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #md-content { display: none; }
+    #md-content.loaded { display: block; }
+    .md-body h1 { font-size: 32px; font-weight: 800; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 2px solid var(--border); line-height: 1.3; }
+    .md-body h2 { font-size: 22px; font-weight: 700; margin-top: 42px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .md-body h3 { font-size: 18px; font-weight: 700; margin-top: 30px; margin-bottom: 10px; }
+    .md-body h4 { font-size: 15px; font-weight: 700; margin-top: 22px; margin-bottom: 8px; color: var(--text-secondary); }
+    .md-body h5 { font-size: 14px; font-weight: 600; margin-top: 18px; margin-bottom: 8px; color: var(--text-secondary); }
+    .md-body p { font-size: 15px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.8; }
+    .md-body ul, .md-body ol { padding-left: 20px; margin-bottom: 12px; }
+    .md-body li { font-size: 15px; color: var(--text-secondary); margin-bottom: 6px; }
+    .md-body strong { color: var(--text); font-weight: 700; }
+    .md-body code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px; background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 5px; padding: 1px 6px; color: #e3116c;
+    }
+    html[data-theme="dark"] .md-body code { color: #ff79c6; }
+    .md-body pre { background: #1a1d27; border-radius: 12px; padding: 18px 22px; overflow-x: auto; margin: 16px 0; border: 1px solid rgba(255,255,255,0.06); }
+    .md-body pre code { background: transparent; border: none; padding: 0; color: #e2e8f0; line-height: 1.7; }
+    .md-body blockquote {
+      border-left: 3px solid var(--accent); background: var(--accent-light); padding: 10px 16px;
+      border-radius: 0 10px 10px 0; margin: 14px 0; color: var(--text-secondary); font-size: 14px;
+    }
+    .md-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); display: block; overflow-x: auto; }
+    .md-body th, .md-body td { white-space: nowrap; padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .md-body th { background: #f1f3f9; color: var(--text); font-weight: 600; }
+    html[data-theme="dark"] .md-body th { background: rgba(148,163,184,0.10); }
+    .md-body tr:last-child td { border-bottom: none; }
+    .md-body tr:hover td { background: #fafbfd; }
+    html[data-theme="dark"] .md-body tr:hover td { background: rgba(148,163,184,0.06); }
+    .md-body img { max-width: 100%; border-radius: 12px; margin: 14px 0; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .md-body hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+    .md-body a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+    .md-body a:hover { border-color: var(--accent); }
+    .error-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+    .error-state h2 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-left">
+      <a href="/" class="back-btn" id="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        返回首页
+      </a>
+      <div class="header-divider"></div>
+      <span class="doc-title-header" id="doc-title-header">文档预览</span>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
+      <span id="theme-icon" aria-hidden="true">🌙</span>
+      <span id="theme-text">暗黑</span>
+    </button>
+  </header>
+
+  <div class="main-wrapper" id="main-wrapper">
+    <div class="toc-handle-wrapper">
+      <div class="toc-handle" id="toc-handle" role="button" tabindex="0" aria-label="打开目录">
+        <span>≡</span><span>目录</span>
+      </div>
+    </div>
+
+    <aside class="toc-panel" id="toc-panel" aria-label="文档目录">
+      <div class="toc-panel-inner">
+        <div class="toc-header">
+          <div class="toc-title">目录</div>
+          <div class="toc-close" id="toc-close" role="button" aria-label="关闭目录" tabindex="0" title="关闭">✕</div>
+        </div>
+        <div class="toc-body">
+          <ul class="toc-list" id="toc-list"></ul>
+        </div>
+      </div>
+    </aside>
+
+    <div class="layout">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>正在加载文档内容...</p>
+      </div>
+      <div id="md-content">
+        <div class="md-body" id="md-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>
+    // ===== 可配置区（后续项目只改这里） =====
+    const CONFIG = {
+      docTitle: '项目文档预览',
+      // 本地 file:// 下读取同目录 md；线上读取 /docs/xxx.md
+      localMdPath: 'README.md',
+      onlineMdPath: '/docs/README.md',
+      // 图片相对路径基准
+      localImgBase: '../assets/images/',
+      onlineImgBase: '/assets/images/',
+      // TOC 抓取层级
+      tocSelector: 'h2, h3, h4'
+    };
+
+    // ===== Theme =====
+    (function initTheme() {
+      let saved = null;
+      try { saved = localStorage.getItem('doc_preview_theme'); } catch (_) {}
+      const theme = saved || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+
+      const hljsTheme = document.getElementById('hljs-theme');
+      if (hljsTheme) {
+        hljsTheme.href = theme === 'dark'
+          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+      }
+
+      function syncToggle() {
+        const t = document.documentElement.getAttribute('data-theme') || 'dark';
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (!icon || !text) return;
+        if (t === 'dark') { icon.textContent = '🌙'; text.textContent = '暗黑'; }
+        else { icon.textContent = '☀️'; text.textContent = '亮色'; }
+      }
+
+      syncToggle();
+      const btn = document.getElementById('theme-toggle');
+      if (btn) {
+        btn.addEventListener('click', function () {
+          const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+          const next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try { localStorage.setItem('doc_preview_theme', next); } catch (_) {}
+          if (hljsTheme) {
+            hljsTheme.href = next === 'dark'
+              ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+              : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+          }
+          syncToggle();
+        });
+      }
+    })();
+
+    // ===== Markdown =====
+    const isLocalFile = window.location.protocol === 'file:';
+    const RAW_URL = isLocalFile ? CONFIG.localMdPath : CONFIG.onlineMdPath;
+    const IMG_BASE = isLocalFile ? CONFIG.localImgBase : CONFIG.onlineImgBase;
+
+    document.getElementById('doc-title-header').textContent = CONFIG.docTitle;
+    document.title = CONFIG.docTitle;
+    if (isLocalFile) {
+      const backLink = document.getElementById('back-link');
+      if (backLink) backLink.setAttribute('href', '../index.html');
+    }
+
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) return hljs.highlight(code, { language: lang }).value;
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: true,
+      gfm: true
+    });
+
+    async function loadMarkdown() {
+      try {
+        const res = await fetch(RAW_URL);
+        if (!res.ok) throw new Error('Failed to load markdown');
+        let text = await res.text();
+
+        // 修正相对图片路径
+        text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, function(_, alt, src) {
+          const filename = src.split('/').pop();
+          return '![' + alt + '](' + IMG_BASE + (isLocalFile ? filename : encodeURIComponent(filename)) + ')';
+        });
+
+        document.getElementById('md-body').innerHTML = marked.parse(text);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('md-content').classList.add('loaded');
+        document.querySelectorAll('pre code').forEach(function(el) { hljs.highlightElement(el); });
+
+        buildToc();
+      } catch (err) {
+        document.getElementById('loading').innerHTML =
+          '<div class="error-state"><h2>⚠️ 文档加载失败</h2><p>请检查 Markdown 路径配置或刷新重试。</p></div>';
+      }
+    }
+
+    function buildToc() {
+      const root = document.getElementById('md-body');
+      const list = document.getElementById('toc-list');
+      if (!root || !list) return;
+
+      function slugify(s) {
+        return String(s || '')
+          .trim()
+          .replace(/\s+/g, '-')
+          .replace(/[^\u4e00-\u9fa5\w\-]+/g, '')
+          .replace(/\-+/g, '-')
+          .replace(/^\-|\-$/g, '')
+          .toLowerCase();
+      }
+
+      const seen = {};
+      function uniqueId(base) {
+        const id = base || 'section';
+        if (!seen[id]) { seen[id] = 1; return id; }
+        seen[id] += 1;
+        return id + '-' + seen[id];
+      }
+
+      const headings = root.querySelectorAll(CONFIG.tocSelector);
+      const tocLinks = [];
+      list.innerHTML = '';
+
+      headings.forEach(function(h) {
+        const level = parseInt(h.tagName.substring(1), 10);
+        const text = (h.textContent || '').trim();
+        if (!text) return;
+        if (!h.id) h.id = uniqueId(slugify(text));
+
+        const li = document.createElement('li');
+        li.className = 'toc-item level-' + level;
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.innerHTML = '<span class="toc-dot"></span><span class="toc-text"></span>';
+        a.querySelector('.toc-text').textContent = text;
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = document.getElementById(h.id);
+          if (!target) return;
+          const y = target.getBoundingClientRect().top + window.scrollY - 72;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+          history.pushState(null, null, '#' + h.id);
+        });
+        li.appendChild(a);
+        list.appendChild(li);
+        tocLinks.push({ el: h, link: a });
+      });
+
+      function updateActiveToc() {
+        const scrollY = window.scrollY + 100;
+        let activeItem = null;
+        for (let i = 0; i < tocLinks.length; i++) {
+          if (tocLinks[i].el.offsetTop <= scrollY) activeItem = tocLinks[i];
+          else break;
+        }
+        if (!activeItem && tocLinks.length > 0) activeItem = tocLinks[0];
+
+        tocLinks.forEach(function(item) {
+          item.link.classList.toggle('active', item === activeItem);
+        });
+      }
+
+      window.addEventListener('scroll', updateActiveToc, { passive: true });
+      setTimeout(updateActiveToc, 80);
+    }
+
+    // ===== TOC open/close =====
+    (function bindTocEvents() {
+      const wrap = document.getElementById('main-wrapper');
+      const handle = document.getElementById('toc-handle');
+      const closeBtn = document.getElementById('toc-close');
+      if (!wrap || !handle || !closeBtn) return;
+
+      function setOpen(next) { wrap.classList.toggle('toc-open', !!next); }
+      function toggle() { setOpen(!wrap.classList.contains('toc-open')); }
+
+      handle.addEventListener('click', function(e) { e.preventDefault(); toggle(); });
+      handle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+      closeBtn.addEventListener('click', function(e) { e.preventDefault(); setOpen(false); });
+      closeBtn.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(false); }
+      });
+    })();
+
+    loadMarkdown();
+  </script>
+</body>
+</html>

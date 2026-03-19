@@ -416,7 +416,7 @@
 
 #### 6）分享
 
-![alt text](../assets/images/image-25.png)
+![alt text](../assets/images/image-34.png)
 
 - **分享入口**：点击顶部"↑ 分享"按钮，在按钮下方以 Popover 形式弹出分享设置面板（`fade-in + slide-in-from-top`），点击面板外部自动关闭。
 
