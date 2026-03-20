@@ -8,8 +8,22 @@ import { DesignSystemPage } from '@/components/home/DesignSystemPage';
 import { ChatPage } from '@/components/chat/ChatPage';
 import { GlobalStyleCustomizer } from '@/components/home/GlobalStyleCustomizer';
 import { MobileApp } from '@/mobile/MobileApp';
+import { PublishedSitePage } from '@/components/published/PublishedSitePage';
 
 // Removed: SidebarContext definition (moved to external file)
+
+function parsePublishedSiteSlug(hash: string): string | null {
+  const h = hash.split('?')[0];
+  if (h.startsWith('#/en/site/')) {
+    const slug = decodeURIComponent(h.slice('#/en/site/'.length));
+    return slug || null;
+  }
+  if (h.startsWith('#/site/')) {
+    const slug = decodeURIComponent(h.slice('#/site/'.length));
+    return slug || null;
+  }
+  return null;
+}
 
 function App() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -24,10 +38,15 @@ function App() {
 
   const isMobileMode = hash === '#/mobile';
   const isEnglishMode = hash === '#/en';
+  const publishedSiteSlug = parsePublishedSiteSlug(hash);
 
   // Expose locale for translation helper
   if (typeof window !== 'undefined') {
-    window.__PRODES_LOCALE__ = isEnglishMode ? 'en' : 'zh';
+    if (publishedSiteSlug !== null) {
+      window.__PRODES_LOCALE__ = hash.startsWith('#/en/site/') ? 'en' : 'zh';
+    } else {
+      window.__PRODES_LOCALE__ = isEnglishMode ? 'en' : 'zh';
+    }
   }
 
   const [activeNav, setActiveNav] = useState('home');
@@ -62,6 +81,10 @@ function App() {
 
   if (isMobileMode) {
     return <MobileApp />;
+  }
+
+  if (publishedSiteSlug !== null) {
+    return <PublishedSitePage slug={publishedSiteSlug} />;
   }
 
   return (

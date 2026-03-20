@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smartphone, Tablet, Monitor, Share, Share2, Maximize2, Edit3, FileText, CheckCircle2, Paperclip, ArrowUp, X, Globe, Lock, Settings, BarChart3, Image, RefreshCw, MonitorSmartphone, Code2, Palette, AlertCircle } from 'lucide-react';
+import { ChevronDown, PanelLeft, Sparkles, Check, Copy, Download, RotateCw, Smartphone, Tablet, Monitor, Share, Share2, Maximize2, Edit3, FileText, CheckCircle2, Paperclip, ArrowUp, X, Globe, Lock, Settings, BarChart3, Image, RefreshCw, MonitorSmartphone, Code2, Palette, AlertCircle, PackageX } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ import { tr } from '@/pc-en/tr';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarContext } from '@/context/SidebarContext';
 import { streamGenerateApp } from '@/lib/geminiService';
+import { buildPublishedViewerUrl, savePublishedSiteRecord, setPublishedSiteLive } from '@/lib/publishedSiteStorage';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 
@@ -37,7 +38,6 @@ export function ChatPage() {
     const [activeTerminalFile, setActiveTerminalFile] = useState('墨刀AI界面设计评审.md');
     const [inputMessage, setInputMessage] = useState('');
     const [isPublishing, setIsPublishing] = useState(false);
-    const [publishPhase, setPublishPhase] = useState<'idle' | 'uploading' | 'reviewing'>('idle');
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
@@ -492,21 +492,21 @@ export function ChatPage() {
     );
 
     const hasPublishChanges = isPublished && projectName !== publishedProjectName;
+    const canOpenPublishedViewer = isPublished || publishedAt != null;
 
-    const startPublishFlow = (action: 'publish' | 'update') => {
+    const startPublishFlow = (action: 'publish' | 'update', snapshotHtml: string, siteSlug: string) => {
         if (isPublishing) return;
         setIsPublishing(true);
-        setPublishPhase('uploading');
 
-        // Step 1: upload to cloud for review (fast)
-        window.setTimeout(() => {
-            setPublishPhase('reviewing');
-        }, 800);
-
-        // Step 2: reviewing (long)
         window.setTimeout(() => {
             setIsPublishing(false);
-            setPublishPhase('idle');
+
+            savePublishedSiteRecord({
+                slug: siteSlug,
+                live: true,
+                html: snapshotHtml,
+                updatedAt: Date.now(),
+            });
 
             if (action === 'publish') {
                 setIsPublished(true);
@@ -526,7 +526,7 @@ export function ChatPage() {
             window.setTimeout(() => {
                 setUpdateSuccess(false);
             }, 1000);
-        }, 6800);
+        }, 2800);
     };
 
     const formatPublishedAt = (date: Date) => {
@@ -570,6 +570,11 @@ export function ChatPage() {
                             <CheckCircle2 size={13} strokeWidth={2.5} />
                             {tr('已发布')}
                         </div>
+                    ) : publishedAt ? (
+                        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-800 px-3 py-1 rounded-full text-[12px] font-semibold border border-amber-100">
+                            <PackageX size={13} strokeWidth={2.25} />
+                            {tr('已下架')}
+                        </div>
                     ) : (
                         <div className="flex items-center gap-1.5 bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[12px] font-semibold border border-slate-200">
                             {tr('未发布')}
@@ -611,12 +616,12 @@ export function ChatPage() {
                                     <span 
                                         className={cn(
                                             "flex-1 text-[13px] font-medium truncate transition-colors",
-                                            isPublished ? "cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-2" : "text-gray-800 cursor-default"
+                                            canOpenPublishedViewer ? "cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-2" : "text-gray-800 cursor-default"
                                         )}
-                                        title={isPublished ? tr("点击在新标签页打开") : tr("发布后可访问")}
+                                        title={canOpenPublishedViewer ? tr("点击在新标签页打开") : tr("发布后可访问")}
                                         onClick={() => {
-                                            if (!isPublished) return;
-                                            window.open(`https://${customUrl}.modao.site`, '_blank');
+                                            if (!canOpenPublishedViewer) return;
+                                            window.open(buildPublishedViewerUrl(customUrl), '_blank');
                                         }}
                                     >
                                         {customUrl}
@@ -647,7 +652,11 @@ export function ChatPage() {
                                 <div className="flex items-center gap-0.5 shrink-0">
                                     <button
                                         title={tr("复制链接")}
-                                        onClick={() => { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }}
+                                        onClick={() => {
+                                            void navigator.clipboard?.writeText?.(buildPublishedViewerUrl(customUrl));
+                                            setCopySuccess(true);
+                                            setTimeout(() => setCopySuccess(false), 2000);
+                                        }}
                                         className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
                                     >
                                         {copySuccess ? <Check size={16} className="text-emerald-500" strokeWidth={2.5} /> : <Copy size={16} />}
@@ -692,7 +701,8 @@ export function ChatPage() {
                             disabled={!hasPublishChanges || isPublishing}
                             onClick={() => {
                                 if (!hasPublishChanges || isPublishing) return;
-                                startPublishFlow('update');
+                                const html = toolbarSession?.generatedHtml || toolbarSession?.streamingCode || '';
+                                startPublishFlow('update', html, customUrl);
                             }}
                             className={cn(
                                 "flex-1 h-[42px] rounded-[10px] font-semibold text-[14px] overflow-hidden relative transition",
@@ -705,7 +715,7 @@ export function ChatPage() {
                                 {tr('更新')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing && !updateSuccess ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                                <RefreshCw size={14} className="animate-spin" /> {publishPhase === 'reviewing' ? tr('审核中...') : tr('正在上传审核...')}
+                                <RefreshCw size={14} className="animate-spin" /> {tr('正在发布...')}
                             </div>
                             <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", updateSuccess ? "translate-y-0 opacity-100 bg-emerald-500 text-white" : "translate-y-10 opacity-0")}>
                                 <Check size={16} strokeWidth={3} /> {tr('更新成功')}
@@ -718,7 +728,8 @@ export function ChatPage() {
                         disabled={isPublishing}
                         onClick={() => {
                             if (isPublishing) return;
-                            startPublishFlow('publish');
+                            const html = toolbarSession?.generatedHtml || toolbarSession?.streamingCode || '';
+                            startPublishFlow('publish', html, customUrl);
                         }}
                         className={cn(
                             "w-full h-[42px] rounded-[10px] text-white font-semibold text-[14px] transition overflow-hidden relative",
@@ -729,7 +740,7 @@ export function ChatPage() {
                             {tr('发布')}
                         </div>
                         <div className={cn("absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300", isPublishing ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0")}>
-                            <RefreshCw size={14} className="animate-spin" /> {publishPhase === 'reviewing' ? tr('审核中...') : tr('正在上传审核...')}
+                            <RefreshCw size={14} className="animate-spin" /> {tr('正在发布...')}
                         </div>
                     </button>
                 )}
@@ -1567,10 +1578,9 @@ export function ChatPage() {
                                                     {tr('导出至墨刀设计')}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    className="text-[12px] font-bold cursor-not-allowed opacity-50"
-                                                    disabled
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
+                                                    className="text-[12px] font-bold cursor-pointer"
+                                                    onClick={() => {
+                                                        showToast(tr('已导出至墨刀原型'));
                                                     }}
                                                 >
                                                     {tr('导出至墨刀原型')}
@@ -2329,6 +2339,7 @@ export function ChatPage() {
                                                 // Step 2: withdrawal success → flip to unpublished, keep time record, show toast
                                                 setIsWithdrawing(false);
                                                 setIsPublished(false);
+                                                setPublishedSiteLive(customUrl, false);
                                                 // publishedAt and publishVersion are intentionally kept for historical display
                                                 showToast(tr('撤回成功'));
                                             }, 1500);
