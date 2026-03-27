@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useSidebarContext } from '@/context/SidebarContext';
 import { streamGenerateApp } from '@/lib/geminiService';
 import { buildPublishedViewerUrl, savePublishedSiteRecord, setPublishedSiteLive } from '@/lib/publishedSiteStorage';
+import { setChatPublishMeta } from '@/lib/chatPublishMeta';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 
@@ -32,7 +33,7 @@ export interface GenerationSession {
 }
 
 export function ChatPage() {
-    const { userPrompt, setUserPrompt, sidebarCollapsed, setSidebarCollapsed, setViewMode, setActiveNav } = useSidebarContext();
+    const { userPrompt, setUserPrompt, sidebarCollapsed, setSidebarCollapsed, setViewMode, setActiveNav, activeChatLabel } = useSidebarContext();
     const [activeTab, setActiveTab] = useState<'preview' | 'edit' | 'code' | 'config' | 'analytics'>('preview');
     const [isDirOpen, setIsDirOpen] = useState(true);
     const [activeTerminalFile, setActiveTerminalFile] = useState('墨刀AI界面设计评审.md');
@@ -507,6 +508,9 @@ export function ChatPage() {
                 html: snapshotHtml,
                 updatedAt: Date.now(),
             });
+
+            const chatPublishKey = activeChatLabel || projectName;
+            setChatPublishMeta(chatPublishKey, { slug: siteSlug, live: true });
 
             if (action === 'publish') {
                 setIsPublished(true);
@@ -2340,6 +2344,7 @@ export function ChatPage() {
                                                 setIsWithdrawing(false);
                                                 setIsPublished(false);
                                                 setPublishedSiteLive(customUrl, false);
+                                                setChatPublishMeta(activeChatLabel || projectName, { slug: customUrl, live: false });
                                                 // publishedAt and publishVersion are intentionally kept for historical display
                                                 showToast(tr('撤回成功'));
                                             }, 1500);

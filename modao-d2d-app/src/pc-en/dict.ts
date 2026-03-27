@@ -68,6 +68,11 @@ export const PC_EN_DICT: Record<string, string> = {
     'Preview of a published page. “Recreate this style” opens Modao AI; “?” shows this note again.',
   '保存': 'Save',
   '取消': 'Cancel',
+  '删除': 'Delete',
+  '删除项目': 'Delete project',
+  '确定要删除项目吗？删除后，已发布的应用和分享链接将一并失效':
+    'Are you sure you want to delete this project? Published apps and sharing links will stop working.',
+  '此操作不可恢复。': 'This action cannot be undone.',
   '编辑域名前缀': 'Edit subdomain',
   '撤回': 'Withdraw',
   '正在撤回...': 'Withdrawing...',

@@ -62,6 +62,7 @@ function App() {
   const [customSystems, setCustomSystems] = useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userPrompt, setUserPrompt] = useState('');
+  const [activeChatLabel, setActiveChatLabel] = useState('');
 
   const handleSaveSystem = (systemData: any) => {
     if (!systemData.id) {
@@ -96,6 +97,7 @@ function App() {
       customSystems, setCustomSystems,
       sidebarCollapsed, setSidebarCollapsed,
       userPrompt, setUserPrompt,
+      activeChatLabel, setActiveChatLabel,
     }}>
       <MainLayout>
         {activeNav === 'design-system' ? (

@@ -15,6 +15,9 @@ export interface SidebarContextType {
   setSidebarCollapsed: (collapsed: boolean) => void;
   userPrompt: string;
   setUserPrompt: (prompt: string) => void;
+  /** 左侧栏当前选中的历史对话标题，用于与发布/删除等项目级操作关联 */
+  activeChatLabel: string;
+  setActiveChatLabel: (label: string) => void;
 }
 
 export const SidebarContext = createContext<SidebarContextType>({
@@ -32,6 +35,8 @@ export const SidebarContext = createContext<SidebarContextType>({
   setSidebarCollapsed: () => { },
   userPrompt: '',
   setUserPrompt: () => { },
+  activeChatLabel: '',
+  setActiveChatLabel: () => { },
 });
 
 export const useSidebarContext = () => useContext(SidebarContext);

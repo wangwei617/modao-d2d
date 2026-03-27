@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebarContext } from '@/context/SidebarContext';
 import { tr } from '@/pc-en/tr';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DeleteProjectDialog } from '@/components/dialogs/DeleteProjectDialog';
+import { clearChatPublishMetaForChat, getChatPublishMeta } from '@/lib/chatPublishMeta';
+import { setPublishedSiteLive } from '@/lib/publishedSiteStorage';
 
 // 墨刀AI Logo 方块
 const LogoIcon = () => (
@@ -56,21 +60,81 @@ const SidebarNavTab = ({ active, onClick, icon, label, collapsed }: any) => (
     </button>
 );
 
-const HistoryItem = ({ label, active, onClick }: { label: string, active?: boolean, onClick?: () => void }) => (
-    <button
-        onClick={onClick}
-        className={cn(
-            "w-full text-left px-3 py-2 rounded-md truncate text-sm transition-colors duration-150",
-            active ? "bg-indigo-50/50 text-indigo-600 font-medium" : "text-gray-600 hover:bg-gray-200/50"
+const DEFAULT_HISTORY_LABELS = [
+    'SaaS落地页设计',
+    '数据导入与清洗',
+    '用户行为分析',
+    '123分析',
+    '项目命名辅助工具',
+    '项目标题设计助手',
+    '123项目命名',
+    '数据清洗与处理',
+    'APP开发项目',
+    '墨刀AI界面评估',
+    '火车票预订系统',
+    '白板行业分析',
+    'AI产品设计平台克隆',
+];
+
+const HistoryItem = ({
+    label,
+    active,
+    onClick,
+    onRequestDelete,
+}: {
+    label: string;
+    active?: boolean;
+    onClick?: () => void;
+    onRequestDelete?: () => void;
+}) => (
+    <div className="group flex items-center gap-0.5 w-full rounded-md hover:bg-gray-200/50">
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                'flex-1 min-w-0 text-left px-3 py-2 rounded-md truncate text-sm transition-colors duration-150',
+                active ? 'bg-indigo-50/50 text-indigo-600 font-medium' : 'text-gray-600',
+            )}
+        >
+            {label}
+        </button>
+        {onRequestDelete && (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRequestDelete();
+                        }}
+                        className="shrink-0 p-2 rounded-md text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 transition-all"
+                        aria-label={tr('删除项目')}
+                    >
+                        <Trash2 size={14} strokeWidth={2} />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1 border-transparent">
+                    {tr('删除项目')}
+                </TooltipContent>
+            </Tooltip>
         )}
-    >
-        {label}
-    </button>
+    </div>
 );
 
 export function Sidebar() {
-    const { activeNav, setActiveNav, setViewMode, viewMode, sidebarCollapsed, setSidebarCollapsed, setUserPrompt } = useSidebarContext();
+    const {
+        activeNav,
+        setActiveNav,
+        setViewMode,
+        viewMode,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        setUserPrompt,
+        setActiveChatLabel,
+    } = useSidebarContext();
     const [activeHistory, setActiveHistory] = useState('AI产品设计平台克隆');
+    const [historyItems, setHistoryItems] = useState<string[]>(DEFAULT_HISTORY_LABELS);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [isLogin] = useState(true);
 
     const isChat = viewMode === 'chat';
@@ -81,6 +145,7 @@ export function Sidebar() {
         if (nav === 'home') {
             setViewMode('home');
             setActiveHistory('');
+            setActiveChatLabel('');
         }
     };
 
@@ -88,12 +153,30 @@ export function Sidebar() {
         setViewMode('home');
         setActiveNav('home');
         setActiveHistory('');
+        setActiveChatLabel('');
         setUserPrompt('');
     };
 
     const handleHistoryClick = (label: string) => {
         setViewMode('chat');
         setActiveHistory(label);
+        setActiveChatLabel(label);
+    };
+
+    const handleConfirmDeleteProject = () => {
+        if (!deleteTarget) return;
+        const meta = getChatPublishMeta(deleteTarget);
+        if (meta?.slug) {
+            setPublishedSiteLive(meta.slug, false);
+        }
+        clearChatPublishMetaForChat(deleteTarget);
+        setHistoryItems((prev) => prev.filter((x) => x !== deleteTarget));
+        if (activeHistory === deleteTarget) {
+            setActiveHistory('');
+            setActiveChatLabel('');
+            setViewMode('home');
+            setActiveNav('home');
+        }
     };
 
     const homeIcon = (
@@ -198,21 +281,25 @@ export function Sidebar() {
 
             <ScrollArea className="flex-1 px-2">
                 <div className="space-y-0.5 pb-4">
-                    <HistoryItem label="SaaS落地页设计" active={viewMode === 'chat' && activeHistory === 'SaaS落地页设计'} onClick={() => handleHistoryClick('SaaS落地页设计')} />
-                    <HistoryItem label="数据导入与清洗" active={viewMode === 'chat' && activeHistory === '数据导入与清洗'} onClick={() => handleHistoryClick('数据导入与清洗')} />
-                    <HistoryItem label="用户行为分析" active={viewMode === 'chat' && activeHistory === '用户行为分析'} onClick={() => handleHistoryClick('用户行为分析')} />
-                    <HistoryItem label="123分析" active={viewMode === 'chat' && activeHistory === '123分析'} onClick={() => handleHistoryClick('123分析')} />
-                    <HistoryItem label="项目命名辅助工具" active={viewMode === 'chat' && activeHistory === '项目命名辅助工具'} onClick={() => handleHistoryClick('项目命名辅助工具')} />
-                    <HistoryItem label="项目标题设计助手" active={viewMode === 'chat' && activeHistory === '项目标题设计助手'} onClick={() => handleHistoryClick('项目标题设计助手')} />
-                    <HistoryItem label="123项目命名" active={viewMode === 'chat' && activeHistory === '123项目命名'} onClick={() => handleHistoryClick('123项目命名')} />
-                    <HistoryItem label="数据清洗与处理" active={viewMode === 'chat' && activeHistory === '数据清洗与处理'} onClick={() => handleHistoryClick('数据清洗与处理')} />
-                    <HistoryItem label="APP开发项目" active={viewMode === 'chat' && activeHistory === 'APP开发项目'} onClick={() => handleHistoryClick('APP开发项目')} />
-                    <HistoryItem label="墨刀AI界面评估" active={viewMode === 'chat' && activeHistory === '墨刀AI界面评估'} onClick={() => handleHistoryClick('墨刀AI界面评估')} />
-                    <HistoryItem label="火车票预订系统" active={viewMode === 'chat' && activeHistory === '火车票预订系统'} onClick={() => handleHistoryClick('火车票预订系统')} />
-                    <HistoryItem label="白板行业分析" active={viewMode === 'chat' && activeHistory === '白板行业分析'} onClick={() => handleHistoryClick('白板行业分析')} />
-                    <HistoryItem label="AI产品设计平台克隆" active={viewMode === 'chat' && activeHistory === 'AI产品设计平台克隆'} onClick={() => handleHistoryClick('AI产品设计平台克隆')} />
+                    {historyItems.map((label) => (
+                        <HistoryItem
+                            key={label}
+                            label={label}
+                            active={viewMode === 'chat' && activeHistory === label}
+                            onClick={() => handleHistoryClick(label)}
+                            onRequestDelete={() => setDeleteTarget(label)}
+                        />
+                    ))}
                 </div>
             </ScrollArea>
+
+            <DeleteProjectDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => {
+                    if (!open) setDeleteTarget(null);
+                }}
+                onConfirmDelete={handleConfirmDeleteProject}
+            />
 
             {/* Footer 用户信息 */}
             <div className="p-4 mt-auto border-t border-transparent shrink-0">
