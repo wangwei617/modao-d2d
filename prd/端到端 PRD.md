@@ -168,7 +168,7 @@
 
 ##### 2）选中“生成 Web/App 应用”模式后的交互
 
-![alt text](../assets/images/image-14.png)
+![alt text](image.png)
 
 用户选中生成web应用/生成app应用tab后，界面进入专项工作流，执行以下动态调整：
 - **状态胶囊灯**：输入框左上角胶囊的交互同线上
