@@ -663,9 +663,9 @@
     })();
 
     var isLocalFile = window.location.protocol === 'file:';
-    // 直接读取同目录下的 端到端 PRD.md
-    var RAW_URL = isLocalFile ? '端到端%20PRD.md' : '/prd/%E7%AB%AF%E5%88%B0%E7%AB%AF%20PRD.md';
-    var IMG_BASE = isLocalFile ? '../assets/images/' : '/assets/images/';
+    // 相对当前页面解析，避免本地用 Live Server / 非根路径时 /prd、/assets 绝对路径 404（线上 Vercel 以仓库根部署时同样正确）
+    var RAW_URL = new URL('端到端%20PRD.md', window.location.href).href;
+    var IMG_BASE = new URL('../assets/images/', window.location.href).href;
 
     if (isLocalFile) {
       var backBtn = document.querySelector('.back-btn');
@@ -689,12 +689,11 @@
         if (!res.ok) throw new Error('Failed to load');
         let text = await res.text();
 
-        // Fix relative image paths
+        // 将 md 中的相对路径统一为「相对站点中 assets/images」的绝对 URL（与当前页同源，本地/线上一致）
         text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, (match, alt, src) => {
-          // If the src is just "image-3.png", it will extract "image-3.png"
-          // We will map it to IMG_BASE + "image-3.png" (e.g. /assets/images/image-3.png)
-          var filename = src.split('/').pop();
-          return '![' + alt + '](' + IMG_BASE + (isLocalFile ? filename : encodeURIComponent(filename)) + ')';
+          var filename = src.split('/').pop().replace(/^\.\//, '');
+          var imgUrl = new URL(filename, IMG_BASE).href;
+          return '![' + alt + '](' + imgUrl + ')';
         });
 
         document.getElementById('md-body').innerHTML = marked.parse(text);

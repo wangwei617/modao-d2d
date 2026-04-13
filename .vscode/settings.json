@@ -7,7 +7,9 @@
     "editor.pasteAs.enabled": true,
     "markdown.editor.filePaste.enabled": true,
     "markdown.editor.drop.enabled": true,
+    // 粘贴/拖入 md 的图片保存位置。使用 workspaceFolder（本文件位于 modao-d2d/.vscode 时，对应该仓库根）。
+    // 若仍落到 prd/：多为未把「modao-d2d」作为工作区根加入，或仅用单文件打开 md，编辑器会退化为「与 md 同目录」。
     "markdown.copyFiles.destination": {
-        "**/*": "${documentWorkspaceFolder}/assets/images/${fileName}"
+        "**/*.md": "${workspaceFolder}/assets/images/${fileName}"
     }
 }
