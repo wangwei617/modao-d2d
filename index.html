@@ -293,7 +293,7 @@
 
     <div class="cards" id="cards">
       <a
-        href="modaoai-0416/dist/index.html"
+        href="/app/"
         class="card card-demo"
         id="ai-home-card-link"
       >
@@ -301,7 +301,7 @@
         <div class="card-body">
           <span class="card-tag">Vite / React</span>
           <h2 class="card-title">墨刀AI<br>首页</h2>
-          <p class="card-desc">主应用目录 modaoai-0416：问候、提示词输入、墨刀工作台等。构建产物为 dist；本地开发时自动跳转至 Vite 开发服务。</p>
+          <p class="card-desc">主应用（Vite，base 为 /app/）：问候、提示词、墨刀工作台。Vercel 与本地构建后均从 /app/ 访问；本机用静态站打开时脚本会改指向开发服。</p>
           <div class="tags">
             <span class="tag-chip">modaoai-0416</span>
             <span class="tag-chip">工作台</span>
@@ -340,8 +340,8 @@
 
   <script>
     /**
-     * 本地：file:// 或本机静态端口（如 Live Server）打开根目录 index 时，墨刀 AI 卡指向 Vite 开发服（modaoai-0416 内 npm run dev，端口 5174）。
-     * 生产环境：使用相对路径 modaoai-0416/dist/index.html（需先在该目录执行 npm run build；dist 未提交仓库时由部署流水线生成）。
+     * 生产 / Vercel：入口页与 app 同域，墨刀 AI 使用 /app/（与 modaoai-0416 的 Vite base 一致，见 build.sh 输出到 vercel-dist/app）。
+     * 本机以 file:// 或静态端口打开根 index、且非 Vite 时，改指向本机 Vite：http://localhost:5174/app/（在 modaoai-0416 下 npm run dev）。
      */
     document.addEventListener('DOMContentLoaded', () => {
       const isLocalFile = window.location.protocol === 'file:';
@@ -353,7 +353,7 @@
       const goVite = isLocalFile || (isLocalHost && !!port && !onVite);
       const ai = document.getElementById('ai-home-card-link');
       if (goVite && ai) {
-        ai.href = 'http://localhost:5174/';
+        ai.href = 'http://localhost:5174/app/';
         ai.removeAttribute('target');
       }
     });
