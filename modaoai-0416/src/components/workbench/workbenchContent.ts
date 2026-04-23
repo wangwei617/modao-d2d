@@ -82,7 +82,7 @@ export type WbProduct = {
         color: string;
         Icon: LucideIcon;
         /**
-         * 原型/白板等 Tab：点击后将对应提示词写入输入框；与 `tr`/dict 中文 key 一致。
+         * 原型 / 白板 / 设计 / AIPPT 等 Tab：点击后将对应提示词写入输入框；与 `tr`/dict 中文 key 一致。
          */
         fillPromptKey?: string;
     }[];
@@ -366,11 +366,46 @@ export const WORKBENCH_PRODUCTS: WbProduct[] = [
         quickStart: [
             { id: 'd0', label: '新建空白设计', primary: true, color: '#9C67FF', Icon: Plus },
             { id: 'd1', label: '导入设计稿', color: '#8B5CF6', Icon: Upload },
-            { id: 'd2', label: '微信小程序组件库', color: '#22C55E', Icon: MessageSquare },
-            { id: 'd3', label: 'Element UI 组件库', color: '#3B82F6', Icon: Component },
-            { id: 'd4', label: 'Ant Design 组件库', color: '#1677FF', Icon: Package },
-            { id: 'd5', label: 'AI 聊天APP套件', color: '#A78BFA', Icon: MessageCircle },
-            { id: 'd6', label: 'HarmonyOS 组件库', color: '#0EA5E9', Icon: Palette },
+            {
+                id: 'd2',
+                label: '微信小程序组件库',
+                color: '#22C55E',
+                Icon: MessageSquare,
+                fillPromptKey:
+                    '请基于 WeUI/微信设计规范输出小程序高保真设计：含首页、列表/搜索、表单与个人中心，说明组件选用与 750 宽栅格习惯。',
+            },
+            {
+                id: 'd3',
+                label: 'Element UI 组件库',
+                color: '#3B82F6',
+                Icon: Component,
+                fillPromptKey:
+                    '请基于 Element Plus 输出中后台高保真界面：顶栏+侧栏布局、典型表格/筛选、表单与弹窗，企业蓝白风格，附关键页面结构说明。',
+            },
+            {
+                id: 'd4',
+                label: 'Ant Design 组件库',
+                color: '#1677FF',
+                Icon: Package,
+                fillPromptKey:
+                    '请基于 Ant Design 输出中后台高保真界面：ProLayout、表格/表单/抽屉等组合，数据展示与操作反馈完整，可注明 Design Token 倾向。',
+            },
+            {
+                id: 'd5',
+                label: 'AI 聊天APP套件',
+                color: '#A78BFA',
+                Icon: MessageCircle,
+                fillPromptKey:
+                    '请输出 AI 聊天类 App 高保真设计：对话列表、单聊/多模态输入区、历史与设置，偏现代轻量，含空态与加载态。',
+            },
+            {
+                id: 'd6',
+                label: 'HarmonyOS 组件库',
+                color: '#0EA5E9',
+                Icon: Palette,
+                fillPromptKey:
+                    '请基于 HarmonyOS 设计规范输出端侧高保真稿：信息架构、列表/卡片、设备能力入口，注意字体层级与系统色使用。',
+            },
         ],
         templateFilters: [
             '全部',
@@ -423,10 +458,38 @@ export const WORKBENCH_PRODUCTS: WbProduct[] = [
             { id: 'p1', label: '导入生成PPT', color: '#FB923C', Icon: FileUp },
             { id: 'p2', label: '链接生成PPT', color: '#3B82F6', Icon: Link2 },
             { id: 'p3', label: 'AI美化PPT', color: '#EC4899', Icon: Sparkles },
-            { id: 'p4', label: '产品经理年终总结', color: '#8B5CF6', Icon: FileBarChart },
-            { id: 'p5', label: '总结汇报', color: '#F59E0B', Icon: Presentation },
-            { id: 'p6', label: 'AI智能研究报告', color: '#10B981', Icon: BookOpen },
-            { id: 'p7', label: '前景分析报告', color: '#EF4444', Icon: LineChart },
+            {
+                id: 'p4',
+                label: '产品经理年终总结',
+                color: '#8B5CF6',
+                Icon: FileBarChart,
+                fillPromptKey:
+                    '请生成「产品经理年终总结」PPT 的章节与逐页要点：年度目标、关键项目与数据成果、问题复盘、协作与成长、明年规划；注明每页建议图表或配图。',
+            },
+            {
+                id: 'p5',
+                label: '总结汇报',
+                color: '#F59E0B',
+                Icon: Presentation,
+                fillPromptKey:
+                    '请生成通用「总结汇报」类 PPT 结构：背景与目标、阶段进展、核心数据、风险与问题、下阶段计划与资源需求，适合对内对外汇报。',
+            },
+            {
+                id: 'p6',
+                label: 'AI智能研究报告',
+                color: '#10B981',
+                Icon: BookOpen,
+                fillPromptKey:
+                    '请按「AI 智能研究报告」体例输出 PPT 大纲：摘要、研究背景、方法/实验、数据与对比、结论与局限、未来工作；附图表/公式占位建议。',
+            },
+            {
+                id: 'p7',
+                label: '前景分析报告',
+                color: '#EF4444',
+                Icon: LineChart,
+                fillPromptKey:
+                    '请输出「前景分析」类 PPT：行业与市场现状、驱动因素、趋势与机会、主要风险、竞争格局、结论与策略建议，咨询报告版式。',
+            },
         ],
         templateFilters: [
             '全部',

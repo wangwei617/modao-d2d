@@ -794,4 +794,26 @@ export const PC_EN_DICT: Record<string, string> = {
     'Build a swimlane flow by role or system: main steps, decision points, and handoffs.',
   '请根据项目任务生成甘特式时间线白板：任务名称、起止时间、依赖关系与里程碑，可用横向时间轴排布。':
     'Gantt-style timeline: tasks, start/end, dependencies, and milestones on a horizontal axis.',
+
+  // Workbench · 设计 Tab 快捷（第三个起：微信组件库 …）
+  '请基于 WeUI/微信设计规范输出小程序高保真设计：含首页、列表/搜索、表单与个人中心，说明组件选用与 750 宽栅格习惯。':
+    'Hi-fi WeChat mini program UI per WeUI: home, list/search, forms, profile—note components and 750rpx grid habits.',
+  '请基于 Element Plus 输出中后台高保真界面：顶栏+侧栏布局、典型表格/筛选、表单与弹窗，企业蓝白风格，附关键页面结构说明。':
+    'Hi-fi Element Plus admin: header+sidebar, tables/filters, forms, dialogs—enterprise blue/white, key page notes.',
+  '请基于 Ant Design 输出中后台高保真界面：ProLayout、表格/表单/抽屉等组合，数据展示与操作反馈完整，可注明 Design Token 倾向。':
+    'Hi-fi Ant Design admin: ProLayout, table/form/drawer patterns, full data & feedback—optional token hints.',
+  '请输出 AI 聊天类 App 高保真设计：对话列表、单聊/多模态输入区、历史与设置，偏现代轻量，含空态与加载态。':
+    'Hi-fi AI chat app: thread list, chat with multimodal input, history/settings—light modern style, empty & loading.',
+  '请基于 HarmonyOS 设计规范输出端侧高保真稿：信息架构、列表/卡片、设备能力入口，注意字体层级与系统色使用。':
+    'Hi-fi HarmonyOS UI: IA, lists/cards, device capability entries—typography hierarchy and system colors.',
+
+  // Workbench · 墨刀AIPPT 快捷（产品经理年终总结起）
+  '请生成「产品经理年终总结」PPT 的章节与逐页要点：年度目标、关键项目与数据成果、问题复盘、协作与成长、明年规划；注明每页建议图表或配图。':
+    'PM year-end review deck: goals, key projects & metrics, retros, collaboration & growth, next year—per-slide bullets and chart/art notes.',
+  '请生成通用「总结汇报」类 PPT 结构：背景与目标、阶段进展、核心数据、风险与问题、下阶段计划与资源需求，适合对内对外汇报。':
+    'Generic summary report deck: context & goals, progress, KPIs, risks, next plan & resources—works for internal or external.',
+  '请按「AI 智能研究报告」体例输出 PPT 大纲：摘要、研究背景、方法/实验、数据与对比、结论与局限、未来工作；附图表/公式占位建议。':
+    'AI research report style: abstract, background, method/experiments, data & comparison, conclusions & limits, future work—figure/formula placeholders.',
+  '请输出「前景分析」类 PPT：行业与市场现状、驱动因素、趋势与机会、主要风险、竞争格局、结论与策略建议，咨询报告版式。':
+    'Prospect analysis deck: market today, drivers, trends & opportunities, risks, competition, conclusions & strategy—consulting layout.',
 };

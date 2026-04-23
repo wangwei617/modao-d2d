@@ -173,7 +173,8 @@ export function WorkbenchHomePage() {
                                 setFilterIdx(0);
                             }}
                             className={cn(
-                                'relative flex min-h-[64px] w-full min-w-0 flex-row items-center gap-2.5 rounded-xl p-2.5 text-left transition duration-200 max-sm:min-w-[10.875rem] max-sm:shrink-0 sm:min-h-[64px] sm:gap-3 sm:p-3.5',
+                                // 较对称 p-2.5 / sm:p-3.5 仅将右侧收紧 1/10（0.9× 原 pr），左内边距与 icon 区不变
+                                'relative flex min-h-[64px] w-full min-w-0 flex-row items-center gap-2.5 rounded-xl py-2.5 pl-2.5 pr-[0.5625rem] text-left transition duration-200 max-sm:min-w-[10.875rem] max-sm:shrink-0 sm:min-h-[64px] sm:gap-3 sm:py-3.5 sm:pl-3.5 sm:pr-[0.7875rem]',
                                 active ? item.cardActive : item.cardIdle,
                                 !active && 'hover:brightness-[0.99]',
                             )}
@@ -278,7 +279,7 @@ export function WorkbenchHomePage() {
                         </div>
                     {moreMenuOpen && (
                         <div
-                            className="absolute right-0 top-full z-50 w-[min(22.5rem,calc(100vw-1.5rem))] min-w-[20rem] max-w-[calc(100vw-1.5rem)] pt-1.5"
+                            className="absolute right-0 top-full z-50 w-[min(18rem,calc(100vw-1.5rem))] min-w-0 max-w-[calc(100vw-1.5rem)] pt-1.5"
                             onMouseEnter={openMoreMenu}
                             onMouseLeave={scheduleCloseMoreMenu}
                         >
@@ -300,7 +301,7 @@ export function WorkbenchHomePage() {
                                                 <button
                                                     key={row.title}
                                                     type="button"
-                                                    className="flex w-full items-center gap-3.5 px-4 py-2.5 text-left transition hover:bg-slate-50/90"
+                                                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50/90"
                                                 >
                                                     <div
                                                         className={cn(
@@ -345,7 +346,8 @@ export function WorkbenchHomePage() {
                         <span className="text-violet-600">{tr(p.inputLabel)}</span>
                         <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-400" />
                     </div>
-                    <div className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-[0_2px_16px_rgba(15,23,42,0.05)]">
+                    {/** 与 `PromptInput` 墨刀 AI 主输入一致：获焦时 ring indigo-200 */}
+                    <div className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-[0_2px_16px_rgba(15,23,42,0.05)] transition-all focus-within:ring-1 focus-within:ring-indigo-200">
                         <textarea
                             value={draft}
                             onChange={(e) => setDraft(e.target.value)}
@@ -402,7 +404,8 @@ export function WorkbenchHomePage() {
                     <span className={p.theme.inputAccent}>{tr(p.inputLabel)}</span>
                     <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-400" />
                 </div>
-                <div className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-[0_2px_16px_rgba(15,23,42,0.05)]">
+                {/** 与 `PromptInput` 墨刀 AI 主输入一致：获焦时 ring indigo-200 */}
+                <div className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-[0_2px_16px_rgba(15,23,42,0.05)] transition-all focus-within:ring-1 focus-within:ring-indigo-200">
                     <textarea
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
@@ -457,7 +460,10 @@ export function WorkbenchHomePage() {
                                         type="button"
                                         onClick={() => {
                                             if (
-                                                (p.id === 'prototype' || p.id === 'whiteboard') &&
+                                                (p.id === 'prototype' ||
+                                                    p.id === 'whiteboard' ||
+                                                    p.id === 'design' ||
+                                                    p.id === 'ppt') &&
                                                 item.fillPromptKey
                                             ) {
                                                 setDraft(tr(item.fillPromptKey));
