@@ -210,9 +210,9 @@
       // 本地 file:// 下读取同目录 md；线上读取 /docs/xxx.md
       localMdPath: 'README.md',
       onlineMdPath: '/docs/README.md',
-      // 图片相对路径基准
-      localImgBase: '../assets/images/',
-      onlineImgBase: '/assets/images/',
+      // 历史 assets 目录已移除；留空则不对 md 内图片做路径改写
+      localImgBase: '',
+      onlineImgBase: '',
       // TOC 抓取层级
       tocSelector: 'h2, h3, h4'
     };
@@ -285,11 +285,12 @@
         if (!res.ok) throw new Error('Failed to load markdown');
         let text = await res.text();
 
-        // 修正相对图片路径
-        text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, function(_, alt, src) {
-          const filename = src.split('/').pop();
-          return '![' + alt + '](' + IMG_BASE + (isLocalFile ? filename : encodeURIComponent(filename)) + ')';
-        });
+        if (IMG_BASE) {
+          text = text.replace(/!\[([^\]]*)\]\((?!http)([^)]+)\)/g, function(_, alt, src) {
+            const filename = src.split('/').pop();
+            return '![' + alt + '](' + IMG_BASE + (isLocalFile ? filename : encodeURIComponent(filename)) + ')';
+          });
+        }
 
         document.getElementById('md-body').innerHTML = marked.parse(text);
         document.getElementById('loading').style.display = 'none';

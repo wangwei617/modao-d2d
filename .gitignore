@@ -6,3 +6,9 @@ node_modules/
 modao-d2d-app/.vite/
 modao-d2d-app/.gitignore_local
 vercel-dist/
+modaoai-0416/node_modules/
+modaoai-0416/dist/
+modaoai-0416/.vite/
+.cursor/
+*.zip
+query_result_*.csv

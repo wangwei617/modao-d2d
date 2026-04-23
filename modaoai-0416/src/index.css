@@ -1,0 +1,298 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Noto Sans SC", "Inter", system-ui, sans-serif;
+  }
+}
+
+/* Custom Scrollbar from Monolithic */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #E5E7EB;
+  border-radius: 20px;
+}
+
+/* Original Gradients and Layout Classes */
+.gradient-text {
+  background: linear-gradient(90deg, #7C3AED 0%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.premium-input-shadow {
+  box-shadow: 0 10px 40px -10px rgba(79, 70, 229, 0.12), 0 0 20px -5px rgba(79, 70, 229, 0.05);
+}
+
+/* Tab Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+#tab-contents-wrapper {
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+}
+
+/* ===== Home Prompt: 一/二级 Tab 切换的缓动与开合动画 =====
+ * Safari 16.4 / Chrome 107 / Firefox 120 起支持 grid-template-rows 从 0fr 到 1fr 的动画，
+ * 用于 0 ↔ auto 的高度过渡，比 max-height 更准且不会卡顿。
+ */
+@keyframes hpFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hpFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 0 ↔ auto 高度折叠：需要配合子节点 `.hp-collapse-inner`（min-height:0 + overflow:hidden）。*/
+.hp-collapse {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    margin 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: grid-template-rows, opacity;
+}
+
+.hp-collapse[data-show='false'] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 一级 Tab：用 max-height 做高度过渡；外层 overflow:hidden 负责折叠；内层加纵向 padding 留足 hover 外扩阴影（约 0 12px 32px -12px），避免上下被裁切 */
+.hp-collapse.hp-collapse--tabs {
+  display: block;
+  max-height: 5.5rem; /* 2.75rem tab + 上下 padding 1rem + scale/阴影 */
+  overflow: hidden;
+  opacity: 1;
+  will-change: max-height;
+  grid-template-rows: none;
+  grid-template-columns: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  transition:
+    max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+    margin 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.hp-collapse.hp-collapse--tabs[data-show='false'] {
+  max-height: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+.hp-collapse--tabs .hp-collapse-inner {
+  overflow: visible;
+  box-sizing: border-box;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.hp-collapse-inner {
+  min-height: 0;
+  /* 与 min-height:0 同理：grid 子项默认 min-width:auto 会按子内容把整行撑出 max-w，列宽勿超过父级 */
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* 完全展开且动画结束后，允许内容溢出（避免裁掉 hover 的 scale/阴影）。
+   由 JS 在 transitionend 后切换 data-overflow='visible'。*/
+.hp-collapse-inner[data-overflow='visible'] {
+  overflow: visible;
+}
+
+/* 内容换场 fade-up：配合 React `key` 重挂载即可自动播放一次 */
+.hp-fade-up {
+  animation: hpFadeUp 360ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.hp-fade {
+  animation: hpFade 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-collapse,
+  .hp-collapse--tabs,
+  .hp-fade-up,
+  .hp-fade {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ===== Home Prompt: contentEditable 富输入 + 内联技能 chip ===== */
+.skill-inline-input {
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 空内容占位符：由 JS 通过 data-empty 控制，避免 contenteditable :empty 在存在零宽节点时失效 */
+.skill-inline-input[data-empty='true']::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  display: inline-block;
+}
+
+/* 内联技能 chip：圆角矩形样式，带统一线性 skill icon，整块可点击删除 */
+.skill-chip-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 6px;
+  margin: 0 2px;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgb(51 65 85);
+  line-height: 1.1;
+  /* 与相邻文本视觉居中对齐：vertical-align:middle 会比文字中心略低 1~2px，做一次微调 */
+  vertical-align: middle;
+  transform: translateY(-1.5px);
+  /* 允许与两侧文本一起被框选，便于显示「选中态」与复制 */
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+.skill-chip-inline[data-skill-in-selection="true"] {
+  background: rgb(186 212 255);
+  border-color: rgb(147 182 255);
+  color: rgb(15 23 42);
+  box-shadow: 0 0 0 1px rgb(96 128 200 / 0.35) inset;
+}
+/* hover 不改基础卡片色，仅 icon 区从灯泡切换为关闭；若正在选区中则略加深背景以区分 */
+.skill-chip-inline:hover:not([data-skill-in-selection]) {
+  cursor: pointer;
+}
+/* hover 不改背景/边框/文字色，仅 icon 区从灯泡切换为关闭 */
+.skill-chip-inline .skill-chip-avatar {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: rgb(245 158 11);
+}
+.skill-chip-inline .skill-chip-ico-skill,
+.skill-chip-inline .skill-chip-ico-close {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 120ms ease;
+}
+.skill-chip-inline .skill-chip-ico-skill {
+  opacity: 1;
+}
+.skill-chip-inline .skill-chip-ico-close {
+  opacity: 0;
+}
+.skill-chip-inline:hover .skill-chip-ico-skill {
+  opacity: 0;
+}
+.skill-chip-inline:hover .skill-chip-ico-close {
+  opacity: 1;
+}
+.skill-chip-inline .skill-chip-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
